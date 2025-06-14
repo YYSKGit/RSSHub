@@ -109,7 +109,7 @@ async function handler(ctx) {
         item: illusts.map((illust) => {
             const images = pixivUtils.getImgs(illust);
             return {
-                title: illust.title,
+                title: `${images.length}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
                 description: `${illust.caption}<br><p>画师：${illust.user.name} - 阅览数：${illust.total_view} - 收藏数：${illust.total_bookmarks}</p>${images.join('')}`,
