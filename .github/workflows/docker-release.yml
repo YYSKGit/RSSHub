@@ -1,140 +1,161 @@
-name: 'Docker Release'
+# ----------------------------------------------------------------
+# 工作流的名称，会显示在 GitHub Actions 页面上
+# ----------------------------------------------------------------
+name: 'Docker Release (简化版)'
 
+# ----------------------------------------------------------------
+# 工作流的触发条件 (Triggers)
+# ----------------------------------------------------------------
 on:
+  # 当有代码推送到指定分支时触发
   push:
+    # 只有推送到 master 分支才会触发
     branches:
       - master
+    # 只有当以下路径的文件发生变更时，才会触发工作流
+    # 这可以避免不相关的代码修改（如修改文档）触发镜像构建
     paths:
-      - '.github/workflows/docker-release.yml'
-      - 'lib/**'
-      - '!lib/**/*.test.ts'
-      - 'Dockerfile'
+      - '.github/workflows/docker-release.yml' # 工作流文件自身
+      - 'lib/**'                               # lib 目录下的所有文件 (/** 表示递归所有子目录和文件)
+      - '!lib/**/*.test.ts'                    # 但 lib 目录下的测试文件 (.test.ts) 除外 (! 表示排除)
+      - 'Dockerfile'                           # Dockerfile 文件
+
+  # 允许在 GitHub Actions 页面上手动点击按钮来运行此工作流
   workflow_dispatch: {}
 
+# ----------------------------------------------------------------
+# 工作流执行的任务 (Jobs)
+# ----------------------------------------------------------------
 jobs:
+  # --- 第一个任务：环境检查 ---
+  # 这个任务的唯一目的是检查运行所需的密钥（Secrets）是否存在
   check-env:
+    # 为此任务授予的权限，none 表示不授予任何权限，更安全
     permissions:
       contents: none
+    # 指定任务运行在 GitHub 托管的最新版 Ubuntu 虚拟机上
     runs-on: ubuntu-latest
+    # 设置此任务的超时时间，5分钟后如果还没完成就会被强制终止
     timeout-minutes: 5
+    # 定义此任务的输出，以便其他任务可以使用它的结果
     outputs:
+      # 输出一个名为 check-docker 的变量，它的值由 'check-docker' 步骤决定
       check-docker: ${{ steps.check-docker.outputs.defined }}
+    # 此任务包含的具体步骤
     steps:
-      - id: check-docker
+      # 步骤1: 检查 DOCKER_USERNAME 是否已设置
+      - id: check-docker # 步骤的唯一标识符
+        # 将仓库密钥 DOCKER_USERNAME 设置为这个步骤的环境变量
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        # 条件判断：只有当 DOCKER_USERNAME 这个环境变量不为空时，才执行下面的 run 命令
         if: ${{ env.DOCKER_USERNAME != '' }}
+        # run 命令：输出一个 'defined=true' 的字符串到 GITHUB_OUTPUT 文件
+        # 这个文件是 GitHub Actions 的标准机制，用于设置步骤的输出
         run: echo "defined=true" >> $GITHUB_OUTPUT
+
+  # --- 第二个任务：构建和发布 ---
+  # 这是核心任务，负责构建和发布 Docker 镜像
   release:
+    # 指定任务运行的虚拟机环境
     runs-on: ubuntu-latest
+    # 依赖关系：表示这个 'release' 任务必须等待 'check-env' 任务成功完成后才能开始
     needs: check-env
+    # 条件判断：只有当 'check-env' 任务的输出 'check-docker' 的值为 'true' 时，才运行此任务
     if: needs.check-env.outputs.check-docker == 'true'
+    # 此任务的超时时间
     timeout-minutes: 60
+    # 为此任务授予的权限，需要写入 packages 和 id-token 的权限
     permissions:
       packages: write
       id-token: write
+    # 此任务包含的具体步骤
     steps:
+      # 步骤1: 检出代码
+      # 使用官方的 actions/checkout@v4 操作，将仓库代码下载到虚拟机里
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
-
+      # 步骤2: 设置 QEMU
+      # QEMU 是一个模拟器，配合 buildx 可以构建非当前硬件架构的镜像（例如在 x86 机器上构建 arm64 镜像）
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        uses: docker/setup-qemu-action@v3
 
+      # 步骤3: 设置 Docker Buildx
+      # Buildx 是 Docker 的一个高级构建工具，支持多平台构建和更高效的缓存等功能
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+        uses: docker/setup-buildx-action@v3
 
+      # 步骤4: 登录到 Docker Hub
+      # 使用 docker/login-action@v3 操作来登录
       - name: Log in to Docker Hub
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@v3
+        # `with` 关键字用于向 `action` 传递参数
         with:
+          # 使用你之前在仓库 Secrets 中设置的用户名和密码
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata (ordinary version)
+      # 步骤5: 提取 Docker 元数据（生成镜像标签）
+      # 使用 docker/metadata-action@v5 自动生成一系列有用的标签
+      - name: Extract Docker metadata
         id: meta-ordinary
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ secrets.DOCKER_USERNAME }}/rsshub
-            ghcr.io/${{ github.repository }}
+          # 指定要生成的镜像名称
+          images: ${{ secrets.DOCKER_USERNAME }}/rsshub
+          # 定义标签的生成规则
           tags: |
+            # 规则1: raw 类型，直接使用 'latest' 作为标签
             type=raw,value=latest,enable=true
+            # 规则2: raw 类型，使用当前日期 'YYYY-MM-DD' 作为标签 (例如: 2025-06-14)
             type=raw,value={{date 'YYYY-MM-DD'}},enable=true
+            # 规则3: sha 类型，使用完整的 git commit hash 作为标签，保证唯一性
             type=sha,format=long,prefix=,enable=true
-          flavor: latest=false
+          # flavor: latest=false 表示在生成其他标签时，不要自动附加 latest 标签
 
-      - name: Build and push Docker image (ordinary version)
+      # 步骤6: 构建并推送 Docker 镜像
+      # 使用 docker/build-push-action@v6 完成构建和推送两个动作
+      - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@v6
         with:
+          # context: . 表示使用当前目录（仓库根目录）作为 Docker 的构建上下文
           context: .
+          # push: true 表示构建成功后，将镜像推送到远程仓库
           push: true
+          # tags 和 labels 使用上一步 'meta-ordinary' 生成的结果
           tags: ${{ steps.meta-ordinary.outputs.tags }}
           labels: ${{ steps.meta-ordinary.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          # 简化点: 指定构建的平台架构，这里只构建 linux/arm64
+          platforms: linux/arm64
+          # 缓存设置: 使用 GitHub Actions 的缓存来加速后续的构建
           cache-from: type=gha,scope=docker-release
           cache-to: type=gha,mode=max,scope=docker-release
 
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          COSIGN_EXPERIMENTAL: 'true'
-        run: echo "${{ steps.meta-ordinary.outputs.tags }}" | xargs -I {} cosign sign --yes {}@${{ steps.build-and-push.outputs.digest }}
-
-      - name: Extract Docker metadata (Chromium-bundled version)
-        id: meta-chromium-bundled
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
-        with:
-          images: |
-            ${{ secrets.DOCKER_USERNAME }}/rsshub
-            ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=chromium-bundled,enable=true
-            type=raw,value=chromium-bundled-{{date 'YYYY-MM-DD'}},enable=true
-            type=sha,format=long,prefix=chromium-bundled-,enable=true
-          flavor: latest=false
-
-      - name: Build and push Docker image (Chromium-bundled version)
-        id: build-and-push-chromium
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
-        with:
-          context: .
-          build-args: PUPPETEER_SKIP_DOWNLOAD=0
-          push: true
-          tags: ${{ steps.meta-chromium-bundled.outputs.tags }}
-          labels: ${{ steps.meta-chromium-bundled.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: |
-            type=registry,ref=${{ secrets.DOCKER_USERNAME }}/rsshub:chromium-bundled
-          cache-to: type=inline,ref=${{ secrets.DOCKER_USERNAME }}/rsshub:chromium-bundled  # inline cache is enough
-
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          COSIGN_EXPERIMENTAL: 'true'
-        run: echo "${{ steps.meta-chromium-bundled.outputs.tags }}" | xargs -I {} cosign sign --yes {}@${{ steps.build-and-push-chromium.outputs.digest }}
-
+  # --- 第三个任务：更新 Docker Hub 描述 ---
+  # 这个任务负责将仓库的 README.md 文件内容同步到 Docker Hub 的项目描述中
   description:
+    # 指定运行环境
     runs-on: ubuntu-latest
+    # 依赖于 'check-env' 任务
     needs: check-env
+    # 同样，只有在密钥检查通过后才运行
     if: needs.check-env.outputs.check-docker == 'true'
+    # 超时时间
     timeout-minutes: 5
+    # 具体步骤
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # 步骤1: 检出代码（每个 job 都是独立的虚拟机，所以需要重新检出代码）
+      - uses: actions/checkout@v4
 
+      # 步骤2: 更新 Docker Hub 描述
+      # 使用 peter-evans/dockerhub-description@v4 这个第三方 action
       - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@432a30c9e07499fd01da9f8a49f0faf9e0ca5b77 # v4.0.2
+        uses: peter-evans/dockerhub-description@v4
         with:
+          # 提供登录 Docker Hub 所需的用户名和密码
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+          # 指定要更新描述的仓库名称
           repository: ${{ secrets.DOCKER_USERNAME }}/rsshub
