@@ -10,11 +10,11 @@ const has_cookie = config.ehentai.ipb_member_id && config.ehentai.ipb_pass_hash 
 const from_ex = has_cookie && config.ehentai.igneous;
 if (has_cookie) {
     if (from_ex) {
-        const { ipb_member_id, ipb_pass_hash, sk, igneous } = config.ehentai;
-        headers.cookie = `ipb_member_id=${ipb_member_id};ipb_pass_hash=${ipb_pass_hash};sk=${sk};igneous=${igneous}`;
+        const { ipb_member_id, ipb_pass_hash, sk, hath_perks, igneous } = config.ehentai;
+        headers.cookie = `ipb_member_id=${ipb_member_id};ipb_pass_hash=${ipb_pass_hash};sk=${sk};hath_perks=${hath_perks};igneous=${igneous}`;
     } else {
-        const { ipb_member_id, ipb_pass_hash, sk } = config.ehentai;
-        headers.cookie = `ipb_member_id=${ipb_member_id};ipb_pass_hash=${ipb_pass_hash};sk=${sk}`;
+        const { ipb_member_id, ipb_pass_hash, sk, hath_perks } = config.ehentai;
+        headers.cookie = `ipb_member_id=${ipb_member_id};ipb_pass_hash=${ipb_pass_hash};sk=${sk};hath_perks=${hath_perks}`;
     }
 }
 
@@ -72,7 +72,20 @@ async function parsePage(cache, data, get_bittorrent = false, embed_thumb = fals
 
     async function parseElement(cache, element) {
         const el = $(element);
-        const title = el.find('div.glink').html();
+        
+        let pageCount = '';
+        el.find('.gl2e .gl3e > div').each((i, div) => {
+            const text = $(div).text().trim();
+            const match = text.match(/^(\d+)\s*pages$/);
+            if (match) {
+                pageCount = match[1];
+            }
+        });
+        let title = el.find('div.glink').html();
+        if (pageCount) {
+            title = `${pageCount}P | ${title}`;
+        }
+        
         const rawDate = el.find('div[id^="posted_"]').text();
         const pubDate = rawDate ? timezone(rawDate, 0) : rawDate;
         let el_a;
