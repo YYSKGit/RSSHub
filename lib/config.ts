@@ -142,6 +142,7 @@ export type Config = {
         ipb_member_id?: string;
         ipb_pass_hash?: string;
         sk?: string;
+        hath_perks?: string;
         igneous?: string;
         star?: string;
         img_proxy?: string;
@@ -593,6 +594,7 @@ const calculateValue = () => {
             ipb_member_id: envs.EH_IPB_MEMBER_ID,
             ipb_pass_hash: envs.EH_IPB_PASS_HASH,
             sk: envs.EH_SK,
+            hath_perks: envs.EH_HATH_PERKS,
             igneous: envs.EH_IGNEOUS,
             star: envs.EH_STAR,
             img_proxy: envs.EH_IMG_PROXY,
