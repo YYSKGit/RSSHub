@@ -108,11 +108,17 @@ async function handler(ctx) {
         link: `https://www.pixiv.net/tags/${keyword}/artworks`,
         item: illusts.map((illust) => {
             const images = pixivUtils.getImgs(illust);
+            const tagsHTML = illust.tags.map((tag) => {
+                const tagName = tag.name;
+                const encodedTagName = encodeURIComponent(tagName);
+                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                return `<a href="${tagUrl}">${tagName}</a>`;
+            });
             return {
-                title: `${images.length}P | ${illust.title}`,
+                title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `${illust.caption}<br><p>画师：${illust.user.name} - 阅览数：${illust.total_view} - 收藏数：${illust.total_bookmarks}</p>${images.join('')}`,
+                description: `<p>${illust.caption}</p><hr><p>${tagsHTML.join(', ')}</p><hr>${images.join('')}`,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
             };
         }),

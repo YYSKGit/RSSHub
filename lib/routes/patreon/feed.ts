@@ -99,7 +99,7 @@ async function handler(ctx) {
         }
 
         return {
-            title: attributes.title,
+            title: `${relationships.images.length}P | ${attributes.title}`,
             description: art(path.join(__dirname, 'templates/description.art'), {
                 attributes,
                 relationships,
