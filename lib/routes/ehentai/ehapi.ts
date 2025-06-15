@@ -6,7 +6,7 @@ import path from 'node:path';
 import { config } from '@/config';
 
 const headers = {};
-const has_cookie = config.ehentai.ipb_member_id && config.ehentai.ipb_pass_hash && config.ehentai.sk;
+const has_cookie = config.ehentai.ipb_member_id && config.ehentai.ipb_pass_hash && config.ehentai.sk && config.ehentai.hath_perks;
 const from_ex = has_cookie && config.ehentai.igneous;
 if (has_cookie) {
     if (from_ex) {
