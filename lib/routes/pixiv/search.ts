@@ -120,7 +120,7 @@ async function handler(ctx) {
                 title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `<p>${illust.caption}</p><br><p>${tagsHTML}</p><br>${images}`,
+                description: `<p>${illust.caption}</p><p>${tagsHTML}</p>${images}`,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
             };
         }),

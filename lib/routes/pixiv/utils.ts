@@ -5,12 +5,12 @@ export default {
         const images: string[] = [];
         if (illust.meta_pages?.length) {
             for (const page of illust.meta_pages) {
-                const original = page.image_urls.original.replace('https://i.pximg.net', config.pixiv.imgProxy);
-                images.push(`<img src="${original}" width="${page.width}" height="${page.height}"/><br>`);
+                const large = page.image_urls.large.replace('https://i.pximg.net', config.pixiv.imgProxy);
+                images.push(`<img src="${large}" style="max-width: 100%; height: auto;"/><br>`);
             }
         } else if (illust.meta_single_page.original_image_url) {
             const original = illust.meta_single_page.original_image_url.replace('https://i.pximg.net', config.pixiv.imgProxy);
-            images.push(`<img src="${original}" width="${illust.width}" height="${illust.height}"/><br>`);
+            images.push(`<img src="${original}" style="max-width: 100%; height: auto;"/><br>`);
         }
         return images;
     },
