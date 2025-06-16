@@ -118,7 +118,13 @@ async function handler(ctx) {
                 title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `<p>${illust.caption}</p><hr><p>${tagsHTML.join(', ')}</p><hr>${images.join('')}`,
+                description: `
+                    <p>${illust.caption}</p>
+                    <hr style="border: none; height: 1px; background-color: #cccccc;">
+                    <p>${tagsHTML.join(', ')}</p>
+                    <hr style="border: none; height: 1px; background-color: #cccccc;">
+                    <br>${images.join('')}
+                `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
             };
         }),
