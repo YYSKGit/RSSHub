@@ -107,24 +107,20 @@ async function handler(ctx) {
         title: `${keyword} 的 pixiv ${order === 'popular' ? '热门' : ''}内容`,
         link: `https://www.pixiv.net/tags/${keyword}/artworks`,
         item: illusts.map((illust) => {
-            const images = pixivUtils.getImgs(illust);
-            const tagsHTML = illust.tags.map((tag) => {
-                const tagName = tag.name;
-                const encodedTagName = encodeURIComponent(tagName);
-                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
-                return `<a href="${tagUrl}">${tagName}</a>`;
-            });
+            const images = pixivUtils.getImgs(illust).join('');
+            const tagsHTML = illust.tags
+                .map((tag) => {
+                    const tagName = tag.name;
+                    const encodedTagName = encodeURIComponent(tagName);
+                    const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                    return `<a href="${tagUrl}">${tagName}</a>`;
+                })
+                .join(', ');
             return {
                 title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `
-                    <p>${illust.caption}</p>
-                    <hr style="border: none; height: 1px; background-color: #cccccc;">
-                    <p>${tagsHTML.join(', ')}</p>
-                    <hr style="border: none; height: 1px; background-color: #cccccc;">
-                    <br>${images.join('')}
-                `,
+                description: `<p>${illust.caption}</p><br><p>${tagsHTML}</p><br>${images}`,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
             };
         }),
