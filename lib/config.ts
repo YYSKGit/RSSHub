@@ -416,9 +416,6 @@ export type Config = {
     smzdm: {
         cookie?: string;
     };
-    bsky: {
-        authorization?: string;
-    };
 };
 
 const value: Config | Record<string, any> = {};
@@ -874,9 +871,6 @@ const calculateValue = () => {
         },
         smzdm: {
             cookie: envs.SMZDM_COOKIE,
-        },
-        bsky: {
-            authorization: envs.BSKY_AUTHORIZATION,
         },
     };
 
