@@ -122,6 +122,7 @@ async function handler(ctx) {
                 pubDate: parseDate(illust.create_date),
                 description: `<p>${illust.caption}</p><p>${tagsHTML}</p>${images}`,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
+                category: illust.tags.map((tag) => tag.name),
             };
         }),
         allowEmpty: true,

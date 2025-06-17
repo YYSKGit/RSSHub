@@ -56,12 +56,20 @@ async function handler() {
         link: 'https://www.pixiv.net/bookmark_new_illust.php',
         description: `Pixiv关注的画师们的最新作品`,
         item: illusts.map((illust) => {
-            const images = pixivUtils.getImgs(illust);
+            const images = pixivUtils.getImgs(illust).join('');
+            const tagsHTML = illust.tags
+                .map((tag) => {
+                    const tagName = tag.name;
+                    const encodedTagName = encodeURIComponent(tagName);
+                    const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                    return `<a href="${tagUrl}">${tagName}</a>`;
+                })
+                .join(', ');
             return {
-                title: illust.title,
+                title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `${illust.caption}<br><p>画师：${illust.user.name} - 阅览数：${illust.total_view} - 收藏数：${illust.total_bookmarks}</p>${images.join('')}`,
+                description: `<p>${illust.caption}</p><p>${tagsHTML}</p>${images}`,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illust.tags.map((tag) => tag.name),
             };

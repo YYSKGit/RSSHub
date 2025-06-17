@@ -14,7 +14,7 @@ export default function getUserIllustFollows(token) {
             Authorization: 'Bearer ' + token,
         },
         searchParams: queryString.stringify({
-            restrict: 'public',
+            restrict: 'all',
         }),
     });
 }
