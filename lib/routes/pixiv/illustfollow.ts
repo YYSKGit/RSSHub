@@ -56,21 +56,23 @@ async function handler() {
         link: 'https://www.pixiv.net/bookmark_new_illust.php',
         description: `Pixiv关注的画师们的最新作品`,
         item: illusts.map((illust) => {
-            const images = pixivUtils.getImgs(illust).join('');
-            const tagsHTML = illust.tags
-                .map((tag) => {
-                    const tagName = tag.name;
-                    const encodedTagName = encodeURIComponent(tagName);
-                    const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
-                    return `<a href="${tagUrl}">${tagName}</a>`;
-                })
-                .join(', ');
+            const images = pixivUtils.getImgs(illust);
+            const tagLinks = illust.tags.map((tag) => {
+                const tagName = tag.name;
+                const encodedTagName = encodeURIComponent(tagName);
+                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                return `<a href="${tagUrl}">#${tagName}</a>`;
+            });
+            const userLink = `<a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a>`;
             return {
                 title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
-                description: `<p>${tagsHTML}</p>
-                <p>${illust.caption}</p>${images}`,
+                description: `
+                    <p>${[...tagLinks, userLink].join(', ')}</p>
+                    <p>${illust.caption}</p>
+                    <div>${images.join('')}</div>
+                `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illust.tags.map((tag) => tag.name),
             };
