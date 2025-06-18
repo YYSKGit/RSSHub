@@ -63,9 +63,9 @@ async function handler() {
                 const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
                 return `<a href="${tagUrl}">#${tagName}</a>`;
             });
-            const aiTypeText = '<a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a>';
-            const userLink = `<a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a>`;
-            const showTags = [...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks, userLink];
+            const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
+            const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
+            const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
             return {
                 title: `${illust.page_count}P | ${illust.title}`,
                 author: illust.user.name,
