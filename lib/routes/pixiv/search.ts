@@ -123,7 +123,7 @@ async function handler(ctx) {
                 pubDate: parseDate(illust.create_date),
                 description: `
                     <p>${showTags.join(', ')}</p>
-                    <hr style="border: none; height: 1px; background-color: #cccccc;">
+                    <hr style="border: none; height: 2px; background-color: #000000;">
                     <p>${illust.caption}</p>
                     <div>${images.join('')}</div>
                 `,
