@@ -72,9 +72,8 @@ async function handler() {
                 pubDate: parseDate(illust.create_date),
                 description: `
                     <p>${showTags.join(', ')}</p>
-                    <hr>
+                    <hr style="border: none; height: 1px; background-color: #cccccc;">
                     <p>${illust.caption}</p>
-                    <hr>
                     <div>${images.join('')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
