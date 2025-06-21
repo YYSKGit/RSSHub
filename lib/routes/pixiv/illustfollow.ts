@@ -74,7 +74,7 @@ async function handler() {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
-                    <div>${images.join('')}</div>
+                    <div>${images.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illust.tags.map((tag) => tag.name),
