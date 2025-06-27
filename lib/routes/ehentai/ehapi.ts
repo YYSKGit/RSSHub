@@ -72,7 +72,7 @@ async function parsePage(cache, data, get_bittorrent = false, embed_thumb = fals
 
     async function parseElement(cache, element) {
         const el = $(element);
-        
+
         let pageCount = '';
         el.find('.gl2e .gl3e > div').each((i, div) => {
             const text = $(div).text().trim();
@@ -85,7 +85,7 @@ async function parsePage(cache, data, get_bittorrent = false, embed_thumb = fals
         if (pageCount) {
             title = `${pageCount}P | ${title}`;
         }
-        
+
         const rawDate = el.find('div[id^="posted_"]').text();
         const pubDate = rawDate ? timezone(rawDate, 0) : rawDate;
         let el_a;
@@ -217,8 +217,12 @@ function getSearchItems(cache, params, page, get_bittorrent = false, embed_thumb
     return page ? gatherItemsByPage(cache, `?${params}&next=${page}`, get_bittorrent, embed_thumb) : gatherItemsByPage(cache, `?${params}`, get_bittorrent, embed_thumb);
 }
 
+function getWatchedItems(cache, params, page, get_bittorrent = false, embed_thumb = false) {
+    return page ? gatherItemsByPage(cache, `watched?${params}&next=${page}`, get_bittorrent, embed_thumb) : gatherItemsByPage(cache, `watched?${params}`, get_bittorrent, embed_thumb);
+}
+
 function getTagItems(cache, tag, page, get_bittorrent = false, embed_thumb = false) {
     return page ? gatherItemsByPage(cache, `tag/${tag}?next=${page}`, get_bittorrent, embed_thumb) : gatherItemsByPage(cache, `tag/${tag}`, get_bittorrent, embed_thumb);
 }
 
-export default { getFavoritesItems, getSearchItems, getTagItems, has_cookie, from_ex };
+export default { getFavoritesItems, getSearchItems, getWatchedItems, getTagItems, has_cookie, from_ex };
