@@ -113,12 +113,19 @@ async function handler(ctx) {
         const category = $('a', arr)
             .toArray()
             .map((a) => $(a).text());
+        const type = $('.work_category a', element).text();
         const author = $('.maker_name', element).text();
+        const showAuthor = author.split('/')[0].trim();
+        const showCategory = [`<strong>@${showAuthor}</strong>`, `<strong>#${type}</strong>`, ...category.map((a) => `#${a}`)];
 
         const signle = {
             title,
             link,
-            description,
+            description: `
+                <p>${showCategory.join(', ')}</p>
+                <hr style="border: none; height: 1px; background-color: #000000;">
+                <p>${description}</p>
+            `,
             category,
             author,
             pubDate,
