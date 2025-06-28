@@ -85,7 +85,7 @@ async function handler(ctx) {
         throw new InvalidParameterError('不支持指定类型！');
     }
 
-    const link = info.url.slice(1);
+    const link = `${info.url.slice(1)}?locale=zh_CN`;
 
     const response = await got(new URL(link, host), {
         method: 'GET',
