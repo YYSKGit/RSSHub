@@ -128,9 +128,8 @@ async function handler(ctx) {
 
     return {
         title,
-        link,
+        link: `${host}/${link}`,
         description,
-        language: 'ja-jp',
         item,
     };
 }
