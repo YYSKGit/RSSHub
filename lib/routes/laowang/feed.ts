@@ -6,7 +6,7 @@ import { parseDate } from '@/utils/parse-date';
 import cache from '@/utils/cache';
 
 export const route: Route = {
-    path: '/feed/test',
+    path: '/feed',
     // @ts-ignore
     handler,
 };
@@ -16,6 +16,7 @@ async function handler() {
     const feed = await parser.parseURL(feedUrl);
 
     const baseUrl = 'https://laowang.vip';
+    const authorSpaceUrl = '&do=thread&view=me&from=space';
     const userCookie = process.env.LAOWANG_COOKIE;
     const items = await Promise.all(
         feed.items.map((item) =>
@@ -30,32 +31,51 @@ async function handler() {
 
                 const $ = cheerio.load(response.data);
                 const content = $('div.t_fsz').first();
+
+                // 清理图片容器并补全链接
+                content.find('ignore_js_op').each((_index, element) => {
+                    const wrapper = $(element);
+                    const img = wrapper.find('img');
+                    if (img.length === 0) {
+                        return;
+                    }
+                    const relativePath = img.attr('zoomfile') || img.attr('file') || img.attr('src');
+                    if (relativePath) {
+                        const fullUrl = new URL(relativePath, baseUrl).href;
+                        const newImageHtml = `<p><img src="${fullUrl}"></p>`;
+                        wrapper.replaceWith(newImageHtml);
+                    } else {
+                        wrapper.remove();
+                    }
+                });
+                // 删除散落在文章中的干扰元素
                 content.find('font.jammer').remove();
-                content.find('p.mbn:has(a[href*="mod=attachment&aid="])').remove();
-                content.find('div[id$="_menu"]').remove();
                 content.find('span[style*="display:none"]').remove();
-                content.find('td.t_f').each((index, element) => {
+                // 清理只剩下<br>的空行
+                content.find('td.t_f').each((_index, element) => {
                     const td = $(element);
                     const tdHtml = td.html();
                     if (tdHtml && tdHtml.replaceAll(/<br\s*\/?>/gi, '').trim() === '') {
                         td.remove();
                     }
                 });
-                content.find('img').each((index, element) => {
-                    const img = $(element);
-                    const zoomfile = img.attr('zoomfile');
-                    if (zoomfile) {
-                        const fullUrl = new URL(zoomfile, baseUrl).href;
-                        img.attr('src', fullUrl);
-                    }
-                });
 
+                // 构建文章开头标签
                 const showTags: string[] = [];
+                const authorElement = $('div.pi > div.authi  > a').first();
+                if (authorElement.length > 0) {
+                    const authorName = authorElement.text();
+                    const href = authorElement.attr('href');
+                    if (authorName && href) {
+                        const authorUrl = new URL(href, baseUrl).href;
+                        showTags.push(`<a href="${authorUrl}${authorSpaceUrl}">@${authorName}</a>`);
+                    }
+                }
                 const typeElement = $('div.deanjstopr > h3 > a');
                 if (typeElement.length > 0) {
                     const typeName = typeElement.text();
                     const href = typeElement.attr('href');
-                    if (href) {
+                    if (typeName && href) {
                         const typeUrl = new URL(href, baseUrl).href;
                         showTags.push(`<strong><a href="${typeUrl}">#${typeName}</a></strong>`);
                     }
@@ -64,7 +84,7 @@ async function handler() {
                 if (tagElements.length > 0) {
                     const tagName = tagElements.text().replaceAll(/^\[|\]$/g, '');
                     const href = tagElements.attr('href');
-                    if (href) {
+                    if (tagName && href) {
                         const tagUrl = new URL(href, baseUrl).href;
                         showTags.push(`<a href="${tagUrl}">#${tagName}</a>`);
                     }
