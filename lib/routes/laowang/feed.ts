@@ -35,14 +35,15 @@ async function handler() {
                 // 清理图片容器并补全链接
                 content.find('ignore_js_op').each((_index, element) => {
                     const wrapper = $(element);
-                    const img = wrapper.find('img');
+                    const img = wrapper.find('img.zoom');
                     if (img.length === 0) {
+                        wrapper.remove();
                         return;
                     }
                     const relativePath = img.attr('zoomfile') || img.attr('file') || img.attr('src');
                     if (relativePath) {
                         const fullUrl = new URL(relativePath, baseUrl).href;
-                        const newImageHtml = `<p><img src="${fullUrl}"></p>`;
+                        const newImageHtml = `<p><img src="${fullUrl}"> style="max-width: 100%; height: auto;"></p>`;
                         wrapper.replaceWith(newImageHtml);
                     } else {
                         wrapper.remove();
