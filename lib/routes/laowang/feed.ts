@@ -6,7 +6,7 @@ import { parseDate } from '@/utils/parse-date';
 import cache from '@/utils/cache';
 
 export const route: Route = {
-    path: '/feed',
+    path: '/newthread',
     // @ts-ignore
     handler,
 };
@@ -43,7 +43,7 @@ async function handler() {
                     const relativePath = img.attr('zoomfile') || img.attr('file') || img.attr('src');
                     if (relativePath) {
                         const fullUrl = new URL(relativePath, baseUrl).href;
-                        const newImageHtml = `<p><img src="${fullUrl}"> style="max-width: 100%; height: auto;"></p>`;
+                        const newImageHtml = `<p><img src="${fullUrl}" style="max-width: 100%; height: auto;"></p>`;
                         wrapper.replaceWith(newImageHtml);
                     } else {
                         wrapper.remove();
@@ -52,12 +52,26 @@ async function handler() {
                 // 删除散落在文章中的干扰元素
                 content.find('font.jammer').remove();
                 content.find('span[style*="display:none"]').remove();
-                // 清理只剩下<br>的空行
+                content.find('i.pstatus').remove();
+
+                // 提取表格内元素
                 content.find('td.t_f').each((_index, element) => {
                     const td = $(element);
-                    const tdHtml = td.html();
-                    if (tdHtml && tdHtml.replaceAll(/<br\s*\/?>/gi, '').trim() === '') {
-                        td.remove();
+                    const htmlContent = td.html() || '';
+                    if (htmlContent.replaceAll(/<br\s*\/?>/gi, '').trim() === '') {
+                        const tableToRemove = td.closest('table');
+                        if (tableToRemove.length > 0) {
+                            tableToRemove.remove();
+                        } else {
+                            td.remove();
+                        }
+                    } else {
+                        const tableToUnwrap = td.closest('table');
+                        if (tableToUnwrap.length > 0) {
+                            tableToUnwrap.replaceWith(htmlContent);
+                        } else {
+                            td.replaceWith(htmlContent);
+                        }
                     }
                 });
 
@@ -90,6 +104,27 @@ async function handler() {
                         showTags.push(`<a href="${tagUrl}">#${tagName}</a>`);
                     }
                 }
+                const tagContainer = content.find('div.ptg.mbm.mtn');
+                if (tagContainer.length > 0) {
+                    tagContainer.find('a').each((_index, element) => {
+                        const tagName = $(element).text();
+                        const href = $(element).attr('href');
+                        if (tagName && href) {
+                            const tagUrl = new URL(href, baseUrl).href;
+                            showTags.push(`<a href="${tagUrl}">#${tagName}</a>`);
+                        }
+                    });
+                    tagContainer.remove();
+                }
+
+                // 清理文章首尾<br>元素
+                let finalHtml = content.html();
+                if (finalHtml) {
+                    finalHtml = finalHtml
+                        .trim()
+                        .replace(/^(\s*<br\s*\/?>\s*)+/i, '')
+                        .replace(/(\s*<br\s*\/?>\s*)+$/i, '');
+                }
 
                 return {
                     title: item.title,
@@ -99,7 +134,7 @@ async function handler() {
                     description: `
                         <p>${showTags.join(', ')}</p>
                         <hr style="border: none; height: 1px; background-color: #000000;">
-                        <div>${content.html()}</div>
+                        <div>${finalHtml}</div>
                     `,
                     category: item.categories,
                 };
