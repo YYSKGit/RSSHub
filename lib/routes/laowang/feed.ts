@@ -1,7 +1,6 @@
 import type { Route } from '@/types';
 import got from '@/utils/got';
 import * as cheerio from 'cheerio';
-import parser from '@/utils/rss-parser';
 import { parseDate } from '@/utils/parse-date';
 import cache from '@/utils/cache';
 
@@ -12,14 +11,44 @@ export const route: Route = {
 };
 
 async function handler() {
-    const feedUrl = 'https://laowang.vip/forum.php?mod=guide&view=newthread&rss=1';
-    const feed = await parser.parseURL(feedUrl);
-
     const baseUrl = 'https://laowang.vip';
-    const authorSpaceUrl = '&do=thread&view=me&from=space';
     const userCookie = process.env.LAOWANG_COOKIE;
+
+    // 分页抓取最新文章列表
+    const listUrl = `${baseUrl}/forum.php?mod=guide&view=newthread`;
+    const pageUrls = Array.from({ length: 2 }, (_, i) => `${listUrl}&page=${i + 1}`);
+    const pageResponses = await Promise.all(
+        pageUrls.map((url) =>
+            got({
+                method: 'get',
+                url,
+                headers: {
+                    Cookie: userCookie,
+                },
+            })
+        )
+    );
+
+    // 解析每一页的文章列表
+    let list: { title: string; link: string }[] = [];
+    for (const response of pageResponses) {
+        const $ = cheerio.load(response.data);
+        const threadList = $('#threadlist .bm_c tr');
+        const pageItems = threadList.toArray().map((element) => {
+            const titleElement = $(element).find('a.xst');
+            return {
+                title: titleElement.text(),
+                link: new URL(titleElement.attr('href')!, baseUrl).href.replace('&extra=', ''),
+            };
+        });
+        list = [...list, ...pageItems];
+    }
+    list = list.filter((item, index, self) => index === self.findIndex((t) => t.link === item.link));
+
+    // 获取文章的详细信息
+    const authorSpaceUrl = '&do=thread&view=me&from=space';
     const items = await Promise.all(
-        feed.items.map((item) =>
+        list.map((item) =>
             cache.tryGet(item.link!, async () => {
                 const response = await got({
                     method: 'get',
@@ -77,18 +106,20 @@ async function handler() {
 
                 // 构建文章开头标签
                 const showTags: string[] = [];
+                let authorName = '';
                 const authorElement = $('div.pi > div.authi  > a').first();
                 if (authorElement.length > 0) {
-                    const authorName = authorElement.text();
+                    authorName = authorElement.text();
                     const href = authorElement.attr('href');
                     if (authorName && href) {
                         const authorUrl = new URL(href, baseUrl).href;
                         showTags.push(`<a href="${authorUrl}${authorSpaceUrl}">@${authorName}</a>`);
                     }
                 }
+                let typeName = '';
                 const typeElement = $('div.deanjstopr > h3 > a');
                 if (typeElement.length > 0) {
-                    const typeName = typeElement.text();
+                    typeName = typeElement.text();
                     const href = typeElement.attr('href');
                     if (typeName && href) {
                         const typeUrl = new URL(href, baseUrl).href;
@@ -116,6 +147,7 @@ async function handler() {
                     });
                     tagContainer.remove();
                 }
+                const pubDate = $('div.pti > div.authi > em > span').first().attr('title');
 
                 // 清理文章首尾<br>元素
                 let finalHtml = content.html();
@@ -129,14 +161,14 @@ async function handler() {
                 return {
                     title: item.title,
                     link: item.link,
-                    pubDate: parseDate(item.pubDate!),
-                    author: item.creator,
+                    pubDate: parseDate(pubDate!),
+                    author: authorName,
                     description: `
                         <p>${showTags.join(', ')}</p>
                         <hr style="border: none; height: 1px; background-color: #000000;">
                         <div>${finalHtml}</div>
                     `,
-                    category: item.categories,
+                    category: typeName,
                 };
             })
         )
