@@ -71,7 +71,7 @@ async function handler() {
                 <p><a href="${authorLink.attr('href')}">@${authorLink.text()}</a></p>
                 <hr style="border: none; height: 1px; background-color: #000000;">
                 ${imageElement}
-                <div>${descriptionContainer.html()}</div>
+                <p>${descriptionContainer.html()}</p>
                 `,
             };
         })

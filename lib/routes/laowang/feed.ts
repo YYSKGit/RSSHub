@@ -174,7 +174,7 @@ async function handler(ctx) {
                         description: `
                         <p>${showTags.join(', ')}</p>
                         <hr style="border: none; height: 1px; background-color: #000000;">
-                        <div>${finalHtml}</div>
+                        <p>${finalHtml}</p>
                     `,
                         category: typeName,
                     };
