@@ -12,6 +12,7 @@ export const route: Route = {
 async function handler() {
     const baseUrl = 'https://libfans.com';
     const apiUrl = new URL('/includes/ajax/data/load.php', baseUrl).href;
+    const defaultImgs = new Set(['https://libfans.com/content/themes/default/images/og-image.jpg', 'https://drive.proton.me/assets/proton-og-image.png']);
     const userCookie = process.env.LIBFANS_COOKIE;
 
     // 并行请求多个页面
@@ -50,21 +51,28 @@ async function handler() {
                 return null;
             }
 
-            // 替换图片链接为<img>标签
-            descriptionContainer.find('a').each((_, ele) => {
-                const link = $(ele);
-                const href = link.attr('href');
-                if (href && /\.(jpg|jpeg|png|gif|webp)$/i.test(href)) {
-                    link.replaceWith(`<img src="${href}" style="max-width: 100%; height: auto;">`);
+            // 提取图片链接
+            let imageElement = '';
+            const imageDiv = $item.find('div.mt10.plr15 div.image');
+            if (imageDiv.length) {
+                const style = imageDiv.attr('style');
+                const match = style!.match(/url\(['"]?(.+?)['"]?\)/);
+                if (match && match[1] && !defaultImgs.has(match[1])) {
+                    imageElement = `<p><img src="${match[1]}" style="max-width: 100%; height: auto;"></p>`;
                 }
-            });
+            }
 
             return {
                 title: `${authorLink.text()} 发表了新帖子`,
                 link: timeLink.attr('href'),
                 pubDate: parseDate(timeLink.attr('data-time')! + 'Z'),
                 author: authorLink.text(),
-                description: descriptionContainer.html(),
+                description: `
+                <p><a href="${authorLink.attr('href')}">@${authorLink.text()}</a></p>
+                <hr style="border: none; height: 1px; background-color: #000000;">
+                ${imageElement}
+                <div>${descriptionContainer.html()}</div>
+                `,
             };
         })
         .filter(Boolean);
