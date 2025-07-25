@@ -221,6 +221,9 @@ export type Config = {
     lightnovel: {
         cookie?: string;
     };
+    lofter: {
+        cookies?: string;
+    };
     lorientlejour: {
         token?: string;
         username?: string;
@@ -356,6 +359,11 @@ export type Config = {
     };
     tsdm39: {
         cookie: string;
+    };
+    tumblr: {
+        clientId?: string;
+        clientSecret?: string;
+        refreshToken?: string;
     };
     twitter: {
         username?: string[];
@@ -685,6 +693,9 @@ const calculateValue = () => {
         lightnovel: {
             cookie: envs.SECURITY_KEY,
         },
+        lofter: {
+            cookies: envs.LOFTER_COOKIE,
+        },
         lorientlejour: {
             token: envs.LORIENTLEJOUR_TOKEN,
             username: envs.LORIENTLEJOUR_USERNAME,
@@ -820,6 +831,11 @@ const calculateValue = () => {
         },
         tsdm39: {
             cookie: envs.TSDM39_COOKIES,
+        },
+        tumblr: {
+            clientId: envs.TUMBLR_CLIENT_ID,
+            clientSecret: envs.TUMBLR_CLIENT_SECRET,
+            refreshToken: envs.TUMBLR_REFRESH_TOKEN,
         },
         twitter: {
             username: envs.TWITTER_USERNAME?.split(','),
