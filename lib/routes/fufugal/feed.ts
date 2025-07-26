@@ -56,7 +56,6 @@ async function handler() {
         return {
             title: item.game_name,
             link: `${rootUrl}/detail?id=${item.game_id}`,
-            guid: `${rootUrl}/detail?id=${item.game_id}`,
             pubDate: parseDate(item.game_create_time),
             author: tags.find((l: string) => l.startsWith('品牌：'))?.replace('品牌：', '') || '未知',
             category: tags,
