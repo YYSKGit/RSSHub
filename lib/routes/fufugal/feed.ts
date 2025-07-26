@@ -1,15 +1,15 @@
 import type { Route } from '@/types';
-import got from '@/utils/got';
+import axios from 'axios';
 import { parseDate } from '@/utils/parse-date';
 import md5 from '@/utils/md5';
 
+// @ts-ignore
 export const route: Route = {
     path: '/galgame',
-    // @ts-ignore
     handler,
 };
 
-async function handler(ctx) {
+async function handler() {
     const rootUrl = 'https://www.fufugal.com';
     const imgUrl = 'https://img.llgal.xyz';
     const loginUrl = `${rootUrl}/sign`;
@@ -19,15 +19,16 @@ async function handler(ctx) {
     const email = process.env.FUFUGAL_EMAIL;
     const password = process.env.FUFUGAL_PASSWORD;
     if (!email || !password) {
-        throw new Error('请通过环境变量配置 初音的青葱 的邮箱和密码');
+        throw new Error('请先通过环境变量配置邮箱和密码');
     }
 
     // 2. 登录并获取 Cookie
-    const passwordMd5 = md5(password);
-    const loginResponse = await got.post(loginUrl, {
-        form: {
-            email,
-            password: passwordMd5,
+    const loginData = new URLSearchParams();
+    loginData.append('email', email);
+    loginData.append('password', md5(password));
+    const loginResponse = await axios.post(loginUrl, loginData, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
         },
     });
     if (loginResponse.data.code !== 0) {
@@ -39,7 +40,7 @@ async function handler(ctx) {
     }
 
     // 3. 使用 Cookie 获取文章列表
-    const listResponse = await got.get(listUrl, {
+    const listResponse = await axios.get(listUrl, {
         headers: {
             Cookie: cookie,
             Accept: 'application/json, text/plain, */*',
@@ -68,10 +69,10 @@ async function handler(ctx) {
         };
     });
 
-    ctx.set('data', {
+    return {
         title: '初音的青葱-Galgame',
         link: rootUrl,
         description: '初音的青葱的最新Galgame文章',
         item: items,
-    });
+    };
 }
