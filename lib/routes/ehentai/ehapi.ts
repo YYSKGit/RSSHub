@@ -129,13 +129,7 @@ async function parsePage(cache, data, get_bittorrent = false, embed_thumb = fals
                 }
             }
             if ('le'.includes(layout)) {
-                // artist tags will only show in Compact or Extended layout
-                // get artist names as author
-                item.author = $(el)
-                    .find('div.gt[title^="artist:"]')
-                    .toArray()
-                    .map((tag) => $(tag).text())
-                    .join(' / ');
+                item.author = $(el).find('div.gl3e a[href*="/uploader/"]').text();
             }
             return item;
         }
