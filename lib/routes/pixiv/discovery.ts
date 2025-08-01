@@ -9,7 +9,7 @@ import ConfigNotFoundError from '@/errors/types/config-not-found';
 
 // @ts-ignore
 export const route: Route = {
-    path: '/user/discovery',
+    path: '/user/discovery/:limit?',
     handler,
 };
 
