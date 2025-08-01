@@ -2,7 +2,6 @@ import { Route } from '@/types';
 import { getToken } from './token';
 import cache from '@/utils/cache';
 import pixivUtils from './utils';
-import { parseDate } from '@/utils/parse-date';
 import getUserIllustDiscovery from './api/get-illust-discovery';
 import getIllustDetail from './api/get-illust-detail';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
@@ -44,7 +43,7 @@ async function handler(ctx) {
             return {
                 title: `${illustData.page_count}P | ${illustData.title}`,
                 author: illustData.user.name,
-                pubDate: parseDate(illustData.create_date),
+                pubDate: new Date(),
                 description: `
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
