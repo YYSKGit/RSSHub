@@ -9,9 +9,9 @@ import dayjs from 'dayjs';
 const rootUrl = 'https://www.dlsite.com';
 
 const defaultFilters = {
+    per_page: 100,
     show_type: 1,
     show_layout: 1,
-    per_page: 100,
 };
 
 const formatDate = (date, format) => dayjs(date).format(format);
