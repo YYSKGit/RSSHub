@@ -5,7 +5,6 @@ import timezone from '@/utils/timezone';
 import { parseDate } from '@/utils/parse-date';
 import { art } from '@/utils/render';
 import dayjs from 'dayjs';
-import path from 'node:path';
 
 const rootUrl = 'https://www.dlsite.com';
 
@@ -22,14 +21,6 @@ const addFilters = (url, filters) => {
     const filterStr = keys.map((k) => `/${k}/${filters[k]}`).join('');
     const newUrl = url.replaceAll(new RegExp(`(/${keys.join(String.raw`/\w+|/`)}/\\w+)`, 'g'), '');
     return `${newUrl}${/=/.test(newUrl) ? '' : '/='}${filterStr}`;
-};
-
-const getPubDate = (raw) => {
-    const dateMatches = raw.match(/(\d{4}).*(\d{2}).*(\d{2})/);
-    if (dateMatches) {
-        return parseDate(`${dateMatches[1]}-${dateMatches[2]}-${dateMatches[3]}`, 'YYYY-MM-DD');
-    }
-    return parseDate(raw.split(':').pop().trim(), 'MMM/DD/YYYY');
 };
 
 const getDetails = async (works) => {
@@ -50,7 +41,7 @@ const ProcessItems = async (ctx) => {
 
     const limit = ctx.req.query('limit') ? Number.parseInt(ctx.req.query('limit')) : 100;
 
-    const currentUrl = `${rootUrl}${addFilters(subPath, defaultFilters)}`;
+    const currentUrl = `${rootUrl}${addFilters(subPath, defaultFilters)}?locale=zh_CN`;
 
     const response = await got({
         method: 'get',
@@ -60,7 +51,6 @@ const ProcessItems = async (ctx) => {
     const $ = load(response.data);
 
     const works = $('dt.work_name').slice(0, limit);
-    const updatedDate = $('.work_update').length === 0 ? undefined : getPubDate($('.work_update').text());
 
     const details = await getDetails(
         works
@@ -131,35 +121,39 @@ const ProcessItems = async (ctx) => {
         const detail = details[guid];
 
         const pubDate = timezone(parseDate(detail.regist_date), +9);
-        const discountRate = detail.discount_rate;
-        const discountEndDate = detail.discount_end_date ? timezone(parseDate(detail.discount_end_date, 'MM/DD HH:mm'), +9) : undefined;
         images = images.length === 0 ? [detail.work_image] : images;
+        images = images.map((img: string) => `<img src="https:${img}" style="max-width: 100%; height: auto;" />`);
+
+        const authorsLinks = authors.map((author: { link: string; name: string }) => `<strong><a href="${author.link}">@${author.name}</a></strong>`);
+        const categoryLinks = workCategories.map((tag: { text: string; link: string }) => {
+            const tagName = tag.text;
+            const tagUrl = tag.link;
+            return `<strong><a href="${tagUrl}">#${tagName}</a></strong>`;
+        });
+        const genreLinks = workGenres.map((tag: { text: string }) => {
+            const tagName = tag.text;
+            return `<strong>#${tagName}</strong>`;
+        });
+        const tagLinks = searchTags.map((tag: { text: string; link: string }) => {
+            const tagName = tag.text;
+            const tagUrl = tag.link;
+            return `<a href="${tagUrl}">#${tagName}</a>`;
+        });
+        const showTags = [...authorsLinks, ...categoryLinks, ...genreLinks, ...tagLinks];
 
         return {
-            title: `${
-                discountRate
-                    ? `${discountRate}% OFF
-                        ${` ${discountEndDate ? `${dayjs(discountEndDate).format('YYYY-MM-DD HH:mm')} まで` : ''}`}`
-                    : ' '
-            }${title}`,
+            title: title.trim(),
             link,
             pubDate,
             author: authors.map((a) => a.name).join(' / '),
             category: [...workCategories.map((i) => i.text), ...workGenres.map((i) => i.text), ...searchTags.map((i) => i.text), ...nameTags.map((i) => i.text)],
             guid: `dlsite-${guid}`,
-            description: art(path.join(__dirname, 'templates/description.art'), {
-                detail,
-                images,
-                authors,
-                discountRate,
-                discountEndDate,
-                updatedDate,
-                pubDate,
-                workCategories,
-                workGenres,
-                searchTags,
-                description,
-            }),
+            description: `
+                <p>${showTags.join(', ')}</p>
+                <hr style="border: none; height: 1px; background-color: #000000;">
+                <p>${description}</p>
+                <div>${images.join('<br>')}</div>
+            `,
         };
     });
 
