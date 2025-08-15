@@ -52,10 +52,10 @@ async function handler(ctx) {
                         } else if (fsTags.some((tag) => illustData.tags.some((t) => t.name === tag))) {
                             return '[附身]';
                         }
-                        return '';
+                        return '[其他]';
                     };
                     return {
-                        title: `${illustData.page_count}P | ${showType()}${illustData.title}`,
+                        title: `${illustData.page_count}P | ${showType()} ${illustData.title}`,
                         author: illustData.user.name,
                         pubDate: new Date(),
                         description: `
