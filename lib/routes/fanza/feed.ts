@@ -141,7 +141,7 @@ async function handler(ctx) {
             return `<a href="${genreUrl}">#${genreName}</a>`;
         });
         const relatedWordHtmls = detailData.relatedWords.map((word) => {
-            const wordUrl = `${baseUrl}/${floor}/list/?keyword=${encodeURIComponent(word)}`;
+            const wordUrl = `${baseUrl}/${floor}/list/?key=${encodeURIComponent(word)}`;
             return `<a href="${wordUrl}">#${word}</a>`;
         });
         const makerHtml = () => {
@@ -149,7 +149,12 @@ async function handler(ctx) {
             const makerUrl = `${baseUrl}/${floor}/list/?maker=${detailData.maker.id}`;
             return `<strong><a href="${makerUrl}">@${makerName}</a></strong>`;
         };
-        const tagHtmls = [makerHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
+        const numberHtml = () => {
+            const numberName = detailData.makerContentId;
+            const numberUrl = `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${numberName}`;
+            return `<strong><a href="${numberUrl}">@${numberName}</a></strong>`;
+        };
+        const tagHtmls = [makerHtml(), numberHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
         return {
             title: detailData.title,
             author: detailData.maker.name,
