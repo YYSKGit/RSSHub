@@ -26,34 +26,51 @@ async function handler(ctx) {
     const response = await getUserIllustDiscovery(cookie, limit);
     const illusts = response.data.body.thumbnails.illust;
 
+    const cmTags = ['催眠', '洗脳', '洗脑', '常識改変', 'マインドコントロール', 'hypnosis', 'mindcontrol'];
+    const fsTags = ['TSF', '憑依', '乗っ取り', '入れ替わり', '精神汚染', '附身', '夺取', 'Possession', 'bodyswap'];
+
     const items = await Promise.all(
-        illusts.map(async (illust: { id: string }) => {
-            const detail = await getIllustDetail(illust.id, token);
-            const illustData = detail.data.illust;
-            const images = pixivUtils.getImgs(illustData);
-            const tagLinks = illustData.tags.map((tag: { name: string }) => {
-                const tagName = tag.name;
-                const encodedTagName = encodeURIComponent(tagName);
-                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
-                return `<a href="${tagUrl}">#${tagName}</a>`;
-            });
-            const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
-            const userLink = `<strong><a href="https://www.pixiv.net/users/${illustData.user.id}">@${illustData.user.name}</a></strong>`;
-            const showTags = [userLink, ...(illustData.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
-            return {
-                title: `${illustData.page_count}P | ${illustData.title}`,
-                author: illustData.user.name,
-                pubDate: new Date(),
-                description: `
-                    <p>${showTags.join(', ')}</p>
-                    <hr style="border: none; height: 1px; background-color: #000000;">
-                    <p>${illustData.caption}</p>
-                    <div>${images.join('<br>')}</div>
-                `,
-                link: `https://www.pixiv.net/artworks/${illust.id}`,
-                category: illustData.tags.map((tag: { name: string }) => tag.name),
-            };
-        })
+        illusts.map((illust: { id: string }) =>
+            cache.tryGet(
+                illust.id,
+                async () => {
+                    const detail = await getIllustDetail(illust.id, token);
+                    const illustData = detail.data.illust;
+                    const images = pixivUtils.getImgs(illustData);
+                    const tagLinks = illustData.tags.map((tag: { name: string }) => {
+                        const tagName = tag.name;
+                        const encodedTagName = encodeURIComponent(tagName);
+                        const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                        return `<a href="${tagUrl}">#${tagName}</a>`;
+                    });
+                    const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
+                    const userLink = `<strong><a href="https://www.pixiv.net/users/${illustData.user.id}">@${illustData.user.name}</a></strong>`;
+                    const showTags = [userLink, ...(illustData.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
+                    const showType = () => {
+                        if (cmTags.some((tag) => illustData.tags.some((t) => t.name === tag))) {
+                            return '[催眠]';
+                        } else if (fsTags.some((tag) => illustData.tags.some((t) => t.name === tag))) {
+                            return '[附身]';
+                        }
+                        return '';
+                    };
+                    return {
+                        title: `${illustData.page_count}P | ${showType()}${illustData.title}`,
+                        author: illustData.user.name,
+                        pubDate: new Date(),
+                        description: `
+                            <p>${showTags.join(', ')}</p>
+                            <hr style="border: none; height: 1px; background-color: #000000;">
+                            <p>${illustData.caption}</p>
+                            <div>${images.join('<br>')}</div>
+                        `,
+                        link: `https://www.pixiv.net/artworks/${illust.id}`,
+                        category: illustData.tags.map((tag: { name: string }) => tag.name),
+                    };
+                },
+                24 * 60 * 60
+            )
+        )
     );
 
     return {
