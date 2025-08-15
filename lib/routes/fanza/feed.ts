@@ -114,8 +114,27 @@ async function handler(ctx) {
         if (detailData.packageImage.mediumUrl) {
             imageUrls.unshift(detailData.packageImage.mediumUrl);
         }
-        const imageHtmls = imageUrls.map((img) => `<img src="${img}" style="max-width: 100%; height: auto;">`);
+        const imageHtmls = imageUrls.map((img) => `<p><img src="${img}" style="max-width: 100%; height: auto;"></p>`);
         const floor = detailData.floor.toLowerCase();
+        const floorHtml = () => {
+            let floorName = floor;
+            switch (floor) {
+                case 'av':
+                    floorName = '视频';
+                    break;
+                case 'amateur':
+                    floorName = '素人';
+                    break;
+                case 'cinema':
+                    floorName = '成人电影';
+                    break;
+                case 'anime':
+                    floorName = '动画';
+                    break;
+            }
+            const floorUrl = `${baseUrl}/${floor}/list/?key=${encodeURIComponent(queryWord)}`;
+            return `<strong><a href="${floorUrl}">#${floorName}</a></strong>`;
+        };
         const genreHtmls = detailData.genres.map((genre) => {
             const genreName = genre.name;
             const genreUrl = `${baseUrl}/${floor}/list/?genre=${genre.id}`;
@@ -130,7 +149,7 @@ async function handler(ctx) {
             const makerUrl = `${baseUrl}/${floor}/list/?maker=${detailData.maker.id}`;
             return `<strong><a href="${makerUrl}">@${makerName}</a></strong>`;
         };
-        const tagHtmls = [makerHtml(), ...genreHtmls, ...relatedWordHtmls];
+        const tagHtmls = [makerHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
         return {
             title: detailData.title,
             author: detailData.maker.name,
@@ -138,7 +157,7 @@ async function handler(ctx) {
             description: `
                 <p>${tagHtmls.join(', ')}</p>
                 <hr style="border: none; height: 1px; background-color: #000000;">
-                <div>${imageHtmls.join('<br>')}</div>
+                <div>${imageHtmls.join('')}</div>
                 <p>${detailData.description}</p>
             `,
             link: `${baseUrl}/${floor}/content/?id=${detailData.id}`,
@@ -148,7 +167,7 @@ async function handler(ctx) {
 
     return {
         title: `FANZA视频-"${queryWord}"的搜索结果`,
-        link: `${baseUrl}/av/list/?key=${encodeURIComponent(queryWord)}`,
+        link: `${baseUrl}/list/?key=${encodeURIComponent(queryWord)}`,
         description: `FANZA的最新已发售视频`,
         item: items,
     };
