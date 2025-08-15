@@ -150,11 +150,11 @@ async function handler(ctx) {
             return `<strong><a href="${makerUrl}">@${makerName}</a></strong>`;
         };
         const numberHtml = () => {
-            const numberName = detailData.makerContentId;
-            const numberUrl = `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${numberName}`;
-            return `<strong><a href="${numberUrl}">@${numberName}</a></strong>`;
+            const numberUrlA = `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${detailData.makerContentId}`;
+            const numberUrlB = `https://www.jav321.com/video/${detailData.id}`;
+            return [`<strong><a href="${numberUrlA}">@JAVLibrary</a></strong>`, `<strong><a href="${numberUrlB}">@JAV321</a></strong>`];
         };
-        const tagHtmls = [makerHtml(), numberHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
+        const tagHtmls = [makerHtml(), ...numberHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
         return {
             title: detailData.title,
             author: detailData.maker.name,
