@@ -154,7 +154,7 @@ async function handler(ctx) {
             const numberUrlB = `https://www.jav321.com/video/${detailData.id}`;
             return [`<strong><a href="${numberUrlA}">@JAVLibrary</a></strong>`, `<strong><a href="${numberUrlB}">@JAV321</a></strong>`];
         };
-        const tagHtmls = [makerHtml(), ...numberHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls];
+        const tagHtmls = [makerHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls, ...numberHtml()];
         return {
             title: detailData.title,
             author: detailData.maker.name,
