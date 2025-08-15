@@ -173,7 +173,7 @@ async function handler(ctx) {
     return {
         title: `FANZA视频-"${queryWord}"的搜索结果`,
         link: `${baseUrl}/list/?key=${encodeURIComponent(queryWord)}`,
-        description: `FANZA的最新已发售视频`,
+        description: `FANZA上已发售的最新视频`,
         item: items,
     };
 }
