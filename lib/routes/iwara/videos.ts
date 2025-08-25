@@ -46,19 +46,19 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
     const authorHtml = `<strong><a href="${baseUrl}/profile/${item.user.username}">@${item.user.name}</a></strong>`;
     const tagHtmls = item.tags.map((tag: { id: string }) => `<a href="${baseUrl}/videos?tags=${tag.id}">#${tag.id}</a>`);
     const showTagHtmls = [authorHtml, ...tagHtmls];
-    let showImgHtmls: string[] = [];
+    let imgUrls: string[] = [];
     if (item.file) {
         const webpUrl = `${imgUrl}/image/original/${item.file.id}/preview.webp`;
         const jpgUrls = Array.from({ length: item.file.numThumbnails }, (_, i) => {
             const jpgUrl = `${imgUrl}/image/original/${item.file.id}/thumbnail-${String(i).padStart(2, '0')}.jpg`;
             return jpgUrl;
         });
-        showImgHtmls = [webpUrl, ...jpgUrls].map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
+        imgUrls = [webpUrl, ...jpgUrls];
     } else if (item.embedUrl) {
         const embedID = item.embedUrl.split('/').pop();
-        const jpgUrl = `${imgUrl}/image/embed/original/youtube/${embedID}`;
-        showImgHtmls = [`<p><img src="${jpgUrl}" style="max-width: 100%; height: auto;"></p>`];
+        imgUrls = [`${imgUrl}/image/embed/original/youtube/${embedID}`];
     }
+    const showImgHtmls = imgUrls.map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
     let showBodyHtml = '';
     if (item.body) {
         const urlRegex = /(https?:\/\/\S+)/g;
