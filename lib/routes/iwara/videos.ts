@@ -12,7 +12,7 @@ const md = new MarkdownIt({
 
 // @ts-ignore
 export const route: Route = {
-    path: '/videos/:limit?',
+    path: '/videos/all/:limit?',
     handler,
 };
 
