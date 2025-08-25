@@ -2,6 +2,7 @@ import type { Route } from '@/types';
 import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
 import cache from '@/utils/cache';
+import { marked } from 'marked';
 
 // @ts-ignore
 export const route: Route = {
@@ -63,12 +64,7 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
         imgUrls = [`${imgUrl}/image/embed/original/youtube/${embedID}`];
     }
     const showImgHtmls = imgUrls.map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
-    let showBodyHtml = '';
-    if (item.body) {
-        const urlRegex = /(https?:\/\/\S+)/g;
-        const bodyWithLinks = item.body.replaceAll(urlRegex, (url: string) => `<a href="${url}">${url}</a>`);
-        showBodyHtml = `<p>${bodyWithLinks}</p>`;
-    }
+    const showBodyHtml = item.body ? marked(item.body) : '';
     const description = `
         <p>${showTagHtmls.join(', ')}</p>
         <hr style="border: none; height: 1px; background-color: #000000;">
