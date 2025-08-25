@@ -59,12 +59,13 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
     const showTagHtmls = [authorHtml, ...tagHtmls];
     let imgUrls: string[] = [];
     if (item.file) {
+        const thumUrl = `${imgUrl}/image/thumbnail/${item.file.id}/thumbnail-${String(item.thumbnail).padStart(2, '0')}.jpg`;
         const webpUrl = `${imgUrl}/image/original/${item.file.id}/preview.webp`;
         const jpgUrls = Array.from({ length: item.file.numThumbnails }, (_, i) => {
             const jpgUrl = `${imgUrl}/image/original/${item.file.id}/thumbnail-${String(i).padStart(2, '0')}.jpg`;
             return jpgUrl;
         });
-        imgUrls = [webpUrl, ...jpgUrls];
+        imgUrls = [thumUrl, webpUrl, ...jpgUrls];
     } else if (item.embedUrl) {
         const embedID = item.embedUrl.split('/').pop();
         imgUrls = [`${imgUrl}/image/embed/original/youtube/${embedID}`];
