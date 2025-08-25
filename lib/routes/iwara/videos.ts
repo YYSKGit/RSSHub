@@ -48,22 +48,23 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
     const showTagHtmls = [authorHtml, ...tagHtmls];
     let showImgHtmls: string[] = [];
     if (item.file) {
-        const webpHtml = `<img src="${imgUrl}/image/original/${item.file.id}/preview.webp" style="width: 100%; height: auto;">`;
-        const jpgHtmls = Array.from({ length: item.file.numThumbnails }, (_, i) => {
+        const webpUrl = `${imgUrl}/image/original/${item.file.id}/preview.webp`;
+        const jpgUrls = Array.from({ length: item.file.numThumbnails }, (_, i) => {
             const jpgUrl = `${imgUrl}/image/original/${item.file.id}/thumbnail-${String(i).padStart(2, '0')}.jpg`;
-            return `<img src="${jpgUrl}" style="max-width: 100%; height: auto;">`;
+            return jpgUrl;
         });
-        showImgHtmls = [webpHtml, ...jpgHtmls];
+        showImgHtmls = [webpUrl, ...jpgUrls].map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
     } else if (item.embedUrl) {
         const embedID = item.embedUrl.split('/').pop();
-        showImgHtmls = [`<img src="${imgUrl}/image/embed/original/youtube/${embedID}" style="max-width: 100%; height: auto;">`];
+        const jpgUrl = `${imgUrl}/image/embed/original/youtube/${embedID}`;
+        showImgHtmls = [`<p><img src="${jpgUrl}" style="max-width: 100%; height: auto;"></p>`];
     }
     const showBodyHtml = item.body ? `<p>${item.body}</p>` : '';
     const description = `
         <p>${showTagHtmls.join(', ')}</p>
         <hr style="border: none; height: 1px; background-color: #000000;">
         ${showBodyHtml}
-        <div>${showImgHtmls.join('<br>')}</div>
+        <div>${showImgHtmls.join('')}</div>
     `;
     return {
         title: item.title,
