@@ -59,7 +59,12 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
         const jpgUrl = `${imgUrl}/image/embed/original/youtube/${embedID}`;
         showImgHtmls = [`<p><img src="${jpgUrl}" style="max-width: 100%; height: auto;"></p>`];
     }
-    const showBodyHtml = item.body ? `<p>${item.body}</p>` : '';
+    let showBodyHtml = '';
+    if (item.body) {
+        const urlRegex = /(https?:\/\/\S+)/g;
+        const bodyWithLinks = item.body.replaceAll(urlRegex, (url: string) => `<a href="${url}">${url}</a>`);
+        showBodyHtml = `<p>${bodyWithLinks}</p>`;
+    }
     const description = `
         <p>${showTagHtmls.join(', ')}</p>
         <hr style="border: none; height: 1px; background-color: #000000;">
