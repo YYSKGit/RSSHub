@@ -23,13 +23,17 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
 
     const data = response.data;
     const items = await Promise.all(
-        data.results.map((item: { id: string }) =>
+        data.results.map((item: any) =>
             cache.tryGet(item.id, async () => {
-                const video = await got({
-                    method: 'get',
-                    url: `${apiUrl}/video/${item.id}`,
-                });
-                return getItemData(video.data, baseUrl, imgUrl);
+                try {
+                    const video = await got({
+                        method: 'get',
+                        url: `${apiUrl}/video/${item.id}`,
+                    });
+                    return getItemData(video.data, baseUrl, imgUrl);
+                } catch {
+                    return getItemData(item, baseUrl, imgUrl);
+                }
             })
         )
     );
