@@ -67,7 +67,7 @@ function getItemData(item: any, baseUrl: string, imgUrl: string) {
         });
         imgUrls = [thumUrl, webpUrl, ...jpgUrls];
     } else if (item.embedUrl) {
-        const embedID = item.embedUrl.split('/').pop();
+        const embedID = new URL(item.embedUrl).searchParams.get('v');
         imgUrls = [`${imgUrl}/image/embed/original/youtube/${embedID}`];
     }
     const showImgHtmls = imgUrls.map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
