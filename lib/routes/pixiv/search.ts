@@ -110,7 +110,7 @@ async function handler(ctx) {
         item: illusts.map((illust) => {
             const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
             const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
-            const showImages = [previewImageHtml, ...pixivUtils.getImgs(illust)];
+            const showImages = pixivUtils.getImgs(illust);
             const tagLinks = illust.tags.map((tag) => {
                 const tagName = tag.name;
                 const encodedTagName = encodeURIComponent(tagName);
@@ -128,6 +128,7 @@ async function handler(ctx) {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
+                    <p>${previewImageHtml}</p>
                     <div>${showImages.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
