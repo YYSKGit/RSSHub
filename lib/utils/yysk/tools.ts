@@ -47,7 +47,7 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
  */
 export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], targetCount: number = 10): Promise<string> {
     const baseUrl = 'https://api.yyskweb.com/animate';
-    const urlKey = process.env.YYSK_API_KEY;
+    const urlKey = process.env.ACCESS_KEY;
     const showImages = getRepresentativeImages(imageUrls, targetCount)
         .map((url) => encodeURIComponent(url))
         .join(',');
