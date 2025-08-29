@@ -52,9 +52,11 @@ export async function buildPreviewImageUrl(name: string, id: string, imageUrls: 
         .map((url) => encodeURIComponent(url))
         .join(',');
     const previewImage = `${baseUrl}?name=${name}&id=${id}&urls=${showImages}&key=${urlKey}`;
-    const key = `img/${name}/${id}/preview.webp`;
-    if (!(await redis.exists(key))) {
-        axios.get(previewImage).catch(() => {});
+    if (showImages.length > 1) {
+        const key = `img/${name}/${id}/preview.webp`;
+        if (!(await redis.exists(key))) {
+            axios.get(previewImage).catch(() => {});
+        }
     }
     return previewImage;
 }
