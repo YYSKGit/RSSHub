@@ -42,13 +42,13 @@
     "lint-staged": {
         "*.js": [
             "prettier --ignore-unknown --ignore-path ./.gitignore --write",
-            "eslint --cache --fix --concurrency auto"
+            "eslint --cache --fix"
         ],
         "*.{ts,tsx}": [
             "prettier --ignore-unknown --ignore-path ./.gitignore --write",
-            "eslint --cache --fix --concurrency auto"
+            "eslint --cache --fix"
         ],
-        "*.yml": "eslint --cache --fix --concurrency auto"
+        "*.yml": "eslint --cache --fix"
     },
     "dependencies": {
         "@bbob/html": "4.2.0",

@@ -1,5 +1,6 @@
 import { Route, ViewType } from '@/types';
 import cache from '@/utils/cache';
+import { buildPreviewImageUrl } from '@/utils/yysk/tools';
 import { getToken } from './token';
 import searchPopularIllust from './api/search-popular-illust';
 import searchIllust from './api/search-illust';
@@ -107,7 +108,9 @@ async function handler(ctx) {
         title: `${keyword} 的 pixiv ${order === 'popular' ? '热门' : ''}内容`,
         link: `https://www.pixiv.net/tags/${keyword}/artworks`,
         item: illusts.map((illust) => {
-            const images = pixivUtils.getImgs(illust);
+            const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+            const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
+            const showImages = [previewImageHtml, ...pixivUtils.getImgs(illust)];
             const tagLinks = illust.tags.map((tag) => {
                 const tagName = tag.name;
                 const encodedTagName = encodeURIComponent(tagName);
@@ -125,7 +128,7 @@ async function handler(ctx) {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
-                    <div>${images.join('<br>')}</div>
+                    <div>${showImages.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illust.tags.map((tag) => tag.name),
