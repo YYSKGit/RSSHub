@@ -48,10 +48,8 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
 export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], targetCount: number = 10): Promise<string> {
     const baseUrl = 'https://api.yyskweb.com/animate';
     const urlKey = process.env.ACCESS_KEY;
-    const showImages = getRepresentativeImages(imageUrls, targetCount)
-        .map((url) => encodeURIComponent(url))
-        .join(',');
-    const previewImage = `${baseUrl}?name=${name}&id=${id}&urls=${showImages}&key=${urlKey}`;
+    const showImages = getRepresentativeImages(imageUrls, targetCount).map((url) => encodeURIComponent(url));
+    const previewImage = `${baseUrl}?name=${name}&id=${id}&urls=${showImages.join(',')}&key=${urlKey}`;
     if (showImages.length > 1) {
         const key = `img/${name}/${id}/preview.webp`;
         if (!(await redis.exists(key))) {
