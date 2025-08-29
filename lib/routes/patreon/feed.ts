@@ -9,6 +9,8 @@ import path from 'node:path';
 import { art } from '@/utils/render';
 import { config } from '@/config';
 
+import { buildPreviewImageUrl } from '@/utils/yysk/tools';
+
 export const route: Route = {
     path: '/:creator',
     categories: ['new-media'],
@@ -88,29 +90,37 @@ async function handler(ctx) {
         },
     });
 
-    const items = posts.data.map(({ attributes, relationships }) => {
-        for (const [key, value] of Object.entries(relationships)) {
-            if (value.data) {
-                relationships[key] = Array.isArray(value.data) ? value.data.map((item) => posts.included.find((i) => i.id === item.id)) : posts.included.find((i) => i.id === value.data.id);
+    const items = await Promise.all(
+        posts.data.map(async ({ attributes, relationships }) => {
+            for (const [key, value] of Object.entries(relationships)) {
+                if (value.data) {
+                    relationships[key] = Array.isArray(value.data) ? value.data.map((item) => posts.included.find((i) => i.id === item.id)) : posts.included.find((i) => i.id === value.data.id);
+                }
             }
-        }
-        if (attributes.video_preview) {
-            relationships.video_preview = posts.included.find((i) => Number.parseInt(i.id) === attributes.video_preview?.media_id) as unknown as MediaRelation;
-        }
+            if (attributes.video_preview) {
+                relationships.video_preview = posts.included.find((i) => Number.parseInt(i.id) === attributes.video_preview?.media_id) as unknown as MediaRelation;
+            }
 
-        return {
-            title: `${relationships.images.length}P | ${attributes.title}`,
-            description: art(path.join(__dirname, 'templates/description.art'), {
-                attributes,
-                relationships,
-                included: posts.included,
-            }),
-            link: attributes.url,
-            pubDate: parseDate(attributes.published_at),
-            image: attributes.thumbnail?.url ?? attributes.image?.url,
-            category: relationships.user_defined_tags?.map((tag) => tag.attributes.value),
-        };
-    });
+            const images =
+                attributes.post_type === 'image_file' ? ((attributes.post_metadata.image_order || []).map((id) => posts.included.find((item) => item.id === id)?.attributes.image_urls?.original).filter(Boolean) as string[]) : [];
+            const postId = attributes.url.match(/-(\d+)$/)?.[1] ?? '';
+            const previewImage = images.length > 0 ? await buildPreviewImageUrl('patreon', postId, images) : '';
+
+            return {
+                title: `${relationships.images.length}P | ${attributes.title}`,
+                description: art(path.join(__dirname, 'templates/description.art'), {
+                    attributes,
+                    relationships,
+                    included: posts.included,
+                    previewImage,
+                }),
+                link: attributes.url,
+                pubDate: parseDate(attributes.published_at),
+                image: attributes.thumbnail?.url ?? attributes.image?.url,
+                category: relationships.user_defined_tags?.map((tag) => tag.attributes.value),
+            };
+        })
+    );
 
     return {
         title: creatorData.meta.title,

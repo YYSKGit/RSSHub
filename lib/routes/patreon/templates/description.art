@@ -1,3 +1,7 @@
+{{ if previewImage }}
+    <p><img src="{{ previewImage }}" style="max-width: 100%; height: auto;"/></p>
+{{ /if }}
+
 {{ if attributes.post_type === 'image_file' }}
     {{ each attributes.post_metadata.image_order mediaIdStr }}
         {{ set img = included.find((i) => i.id === mediaIdStr) }}
