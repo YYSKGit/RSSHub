@@ -107,34 +107,36 @@ async function handler(ctx) {
     return {
         title: `${keyword} 的 pixiv ${order === 'popular' ? '热门' : ''}内容`,
         link: `https://www.pixiv.net/tags/${keyword}/artworks`,
-        item: illusts.map((illust) => {
-            const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
-            const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
-            const images = pixivUtils.getImgs(illust);
-            const tagLinks = illust.tags.map((tag) => {
-                const tagName = tag.name;
-                const encodedTagName = encodeURIComponent(tagName);
-                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
-                return `<a href="${tagUrl}">#${tagName}</a>`;
-            });
-            const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
-            const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
-            const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
-            return {
-                title: `${illust.page_count}P | ${illust.title}`,
-                author: illust.user.name,
-                pubDate: parseDate(illust.create_date),
-                description: `
+        item: await Promise.all(
+            illusts.map(async (illust) => {
+                const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+                const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
+                const images = pixivUtils.getImgs(illust);
+                const tagLinks = illust.tags.map((tag) => {
+                    const tagName = tag.name;
+                    const encodedTagName = encodeURIComponent(tagName);
+                    const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                    return `<a href="${tagUrl}">#${tagName}</a>`;
+                });
+                const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
+                const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
+                const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
+                return {
+                    title: `${illust.page_count}P | ${illust.title}`,
+                    author: illust.user.name,
+                    pubDate: parseDate(illust.create_date),
+                    description: `
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
                     <p>${previewImageHtml}</p>
                     <div>${images.join('<br>')}</div>
                 `,
-                link: `https://www.pixiv.net/artworks/${illust.id}`,
-                category: illust.tags.map((tag) => tag.name),
-            };
-        }),
+                    link: `https://www.pixiv.net/artworks/${illust.id}`,
+                    category: illust.tags.map((tag) => tag.name),
+                };
+            })
+        ),
         allowEmpty: true,
     };
 }

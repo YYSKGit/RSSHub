@@ -34,7 +34,7 @@ async function handler(ctx) {
         illusts.map(async (illust: { id: string }) => {
             const detail = await getIllustDetail(illust.id, token);
             const illustData = detail.data.illust;
-            const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+            const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
             const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
             const images = pixivUtils.getImgs(illustData);
             const tagLinks = illustData.tags.map((tag: { name: string }) => {

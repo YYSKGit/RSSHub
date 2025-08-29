@@ -1,4 +1,10 @@
 import axios from 'axios';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 /**
  * 从一个图片URL数组中，智能筛选出指定数量的代表性图片。
@@ -39,13 +45,16 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
  * @param {number} [targetCount=10] - 希望合成的目标图片数量
  * @returns {string} 预览图像的URL
  */
-export function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], targetCount: number = 10): string {
+export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], targetCount: number = 10): Promise<string> {
     const baseUrl = 'https://api.yyskweb.com/animate';
-    const urlKey = 'webmm002132';
+    const urlKey = process.env.YYSK_API_KEY;
     const showImages = getRepresentativeImages(imageUrls, targetCount)
         .map((url) => encodeURIComponent(url))
         .join(',');
     const previewImage = `${baseUrl}?name=${name}&id=${id}&urls=${showImages}&key=${urlKey}`;
-    axios.get(previewImage);
+    const key = `img/${name}/${id}/preview.webp`;
+    if (!(await redis.exists(key))) {
+        axios.get(previewImage).catch(() => {});
+    }
     return previewImage;
 }
