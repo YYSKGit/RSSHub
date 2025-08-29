@@ -1,5 +1,6 @@
 import { Route } from '@/types';
 import cache from '@/utils/cache';
+import { buildPreviewImageUrl } from '@/utils/yysk/tools';
 import { getToken } from './token';
 import getIllustFollows from './api/get-illust-follows';
 import { config } from '@/config';
@@ -56,6 +57,8 @@ async function handler() {
         link: 'https://www.pixiv.net/bookmark_new_illust.php',
         description: `Pixiv关注的画师们的最新作品`,
         item: illusts.map((illust) => {
+            const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+            const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
             const images = pixivUtils.getImgs(illust);
             const tagLinks = illust.tags.map((tag) => {
                 const tagName = tag.name;
@@ -74,6 +77,7 @@ async function handler() {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
+                    <p>${previewImageHtml}</p>
                     <div>${images.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,

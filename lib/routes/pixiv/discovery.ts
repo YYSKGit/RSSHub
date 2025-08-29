@@ -1,6 +1,7 @@
 import { Route } from '@/types';
 import { getToken } from './token';
 import cache from '@/utils/cache';
+import { buildPreviewImageUrl } from '@/utils/yysk/tools';
 import pixivUtils from './utils';
 import getUserIllustDiscovery from './api/get-illust-discovery';
 import getIllustDetail from './api/get-illust-detail';
@@ -33,6 +34,8 @@ async function handler(ctx) {
         illusts.map(async (illust: { id: string }) => {
             const detail = await getIllustDetail(illust.id, token);
             const illustData = detail.data.illust;
+            const previewImage = buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+            const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
             const images = pixivUtils.getImgs(illustData);
             const tagLinks = illustData.tags.map((tag: { name: string }) => {
                 const tagName = tag.name;
@@ -59,6 +62,7 @@ async function handler(ctx) {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illustData.caption}</p>
+                    <p>${previewImageHtml}</p>
                     <div>${images.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
