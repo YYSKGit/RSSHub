@@ -42,15 +42,18 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
  * @param {string} name - 动图名称
  * @param {string} id - 动图ID
  * @param {string[]} imageUrls - 原始图片URL数组
- * @param {number} [targetCount=10] - 希望合成的目标图片数量
+ * @param {Object} options - 选项
+ * @param {number} [options.imageSize=0] - 生成图片的尺寸
+ * @param {number} [options.targetCount=10] - 希望合成的目标图片数量
  * @returns {string} 预览图像的URL
  */
-export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], targetCount: number = 10): Promise<string> {
+export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], { imageSize = 0, targetCount = 10 } = {}): Promise<string> {
     const baseUrl = 'https://api.yyskweb.com/animate';
     const urlKey = process.env.ACCESS_KEY;
-    const showImages = getRepresentativeImages(imageUrls, targetCount).map((url) => encodeURIComponent(url));
-    const previewImage = `${baseUrl}?name=${name}&id=${id}&urls=${showImages.join(',')}&key=${urlKey}`;
-    if (showImages.length > 1) {
+    const urlSize = imageSize > 0 ? `&size=${imageSize}` : '';
+    const urlImages = getRepresentativeImages(imageUrls, targetCount).map((url) => encodeURIComponent(url));
+    const previewImage = `${baseUrl}?name=${name}&id=${id}${urlSize}&urls=${urlImages.join(',')}&key=${urlKey}`;
+    if (urlImages.length > 1) {
         const key = `img/${name}/${id}/preview.webp`;
         if (!(await redis.exists(key))) {
             axios.get(previewImage).catch(() => {});
