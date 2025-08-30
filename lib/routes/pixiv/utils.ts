@@ -31,8 +31,9 @@ export default {
         return originalUrl.replace('https://i.pximg.net', config.pixiv.imgProxy || '');
     },
     getImageUrlWithKey(originalUrl: string): string {
+        const mainDomain = 'yyskweb.com';
         const url = new URL(originalUrl ?? '');
-        if (url.hostname === 'api.yyskweb.com') {
+        if (url.hostname === mainDomain || url.hostname.endsWith(`.${mainDomain}`)) {
             url.searchParams.append('key', process.env.ACCESS_KEY ?? '');
         }
         return url.href;
