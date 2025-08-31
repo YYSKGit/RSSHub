@@ -56,7 +56,13 @@ export async function buildPreviewImageUrl(name: string, id: string, imageUrls: 
     if (urlImages.length > 1) {
         const key = `img/${name}/${id}/preview.webp`;
         if (!(await redis.exists(key))) {
-            axios.get(previewImage).catch(() => {});
+            axios
+                .get(previewImage, {
+                    headers: {
+                        'User-Agent': 'rsshub-axios',
+                    },
+                })
+                .catch(() => {});
         }
     }
     return previewImage;
