@@ -24,7 +24,13 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
     const imgUrl = 'https://i.iwara.tv';
     const apiUrl = `https://api.iwara.tv`;
 
-    const sort = category === 'trending' ? 'trending' : 'date';
+    let sort = 'date';
+    let text = '最新';
+    if (category === 'trending') {
+        sort = 'trending';
+        text = '热门';
+    }
+
     const response = await got({
         method: 'get',
         url: `${apiUrl}/videos?rating=ecchi&sort=${sort}&limit=${limit}&page=0`,
@@ -48,9 +54,9 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
     );
 
     return {
-        title: 'Iwara-最新视频',
-        link: `${baseUrl}/videos?sort=date`,
-        description: 'Iwara上发布的最新视频',
+        title: `Iwara-${text}视频`,
+        link: `${baseUrl}/videos?sort=${sort}`,
+        description: `Iwara上发布的${text}视频`,
         item: items,
     };
 }
