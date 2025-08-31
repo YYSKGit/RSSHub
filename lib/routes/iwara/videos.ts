@@ -12,20 +12,22 @@ const md = new MarkdownIt({
 
 // @ts-ignore
 export const route: Route = {
-    path: '/videos/all/:limit?',
+    path: '/videos/:category/:limit?',
     handler,
 };
 
 async function handler(ctx: { req: { param: (arg0: string) => string } }) {
+    const category = ctx.req.param('category');
     const limit = ctx.req.param('limit') ? Number.parseInt(ctx.req.param('limit')) : 50;
 
     const baseUrl = 'https://www.iwara.tv';
     const imgUrl = 'https://i.iwara.tv';
     const apiUrl = `https://api.iwara.tv`;
 
+    const sort = category === 'trending' ? 'trending' : 'date';
     const response = await got({
         method: 'get',
-        url: `${apiUrl}/videos?rating=ecchi&sort=date&limit=${limit}&page=0`,
+        url: `${apiUrl}/videos?rating=ecchi&sort=${sort}&limit=${limit}&page=0`,
     });
 
     const data = response.data;
