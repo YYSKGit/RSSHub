@@ -43,16 +43,24 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
  * @param {string} id - 动图ID
  * @param {string[]} imageUrls - 原始图片URL数组
  * @param {Object} options - 选项
- * @param {number} [options.imageSize=0] - 生成图片的尺寸
+ * @param {number} [options.imageSize=0] - 生成图片的长宽尺寸
+ * @param {number} [options.imageDuration=0] - 动图的显示时长，单位为秒
+ * @param {number} [options.transitionDuration=0] - 动图的过渡时长，单位为秒
+ * @param {number} [options.imageFPS=0] - 动图的帧率
  * @param {number} [options.targetCount=10] - 希望合成的目标图片数量
  * @returns {string} 预览图像的URL
  */
-export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], { imageSize = 0, targetCount = 10 } = {}): Promise<string> {
+export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], { imageSize = 0, imageDuration = 0, transitionDuration = 0, imageFPS = 0, targetCount = 10 } = {}): Promise<string> {
     const baseUrl = 'https://api.yyskweb.com/animate';
-    const urlKey = process.env.ACCESS_KEY;
-    const urlSize = imageSize > 0 ? `&size=${imageSize}` : '';
-    const urlImages = getRepresentativeImages(imageUrls, targetCount).map((url) => encodeURIComponent(url));
-    const previewImage = `${baseUrl}?name=${name}&id=${id}${urlSize}&urls=${urlImages.join(',')}&key=${urlKey}`;
+    const params = new URLSearchParams({ name, id });
+    if (imageSize > 0) {params.append('size', imageSize.toString());}
+    if (imageDuration > 0) {params.append('iDur', imageDuration.toString());}
+    if (transitionDuration > 0) {params.append('tDur', transitionDuration.toString());}
+    if (imageFPS > 0) {params.append('fps', imageFPS.toString());}
+    const urlImages = getRepresentativeImages(imageUrls, targetCount);
+    params.append('urls', urlImages.map((url) => encodeURIComponent(url)).join(','));
+    params.append('key', process.env.ACCESS_KEY ?? '');
+    const previewImage = `${baseUrl}?${params.toString()}`;
     if (urlImages.length > 1) {
         const key = `img/${name}/${id}/preview.webp`;
         if (!(await redis.exists(key))) {

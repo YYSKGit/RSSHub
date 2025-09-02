@@ -58,7 +58,7 @@ async function handler() {
         description: `Pixiv关注的画师们的最新作品`,
         item: await Promise.all(
             illusts.map(async (illust) => {
-                const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+                const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { imageSize: 300, imageDuration: 0.5, transitionDuration: 0.2, imageFPS: 12 });
                 const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
                 const images = pixivUtils.getImgs(illust);
                 const tagLinks = illust.tags.map((tag) => {
