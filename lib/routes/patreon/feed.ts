@@ -66,10 +66,6 @@ async function handler(ctx) {
                         title: 'aigirlint',
                         description: 'A feast for the eyes!',
                     },
-                    attributes: {
-                        avatar_photo_url:
-                            'https://c10.patreonusercontent.com/4/patreon-media/p/campaign/10432077/3e887d6ac3434910b36ae0a7a7880851/eyJoIjoxMDAsInciOjEwMH0%3D/2.png?token-hash=dZHb1j4_RDQ8rLvZ0c78rbwA_qHB0I1zyGddNmHXWfc%3D&token-time=1758326400',
-                    },
                 };
                 break;
             default:
@@ -148,7 +144,7 @@ async function handler(ctx) {
         title: creatorData.meta.title,
         description: creatorData.meta.desc,
         link,
-        image: creatorData.attributes.avatar_photo_url,
+        // image: creatorData.attributes.avatar_photo_url,
         item: items,
         allowEmpty: true,
     };
