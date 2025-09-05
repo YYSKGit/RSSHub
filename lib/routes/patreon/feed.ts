@@ -104,7 +104,7 @@ async function handler(ctx) {
             const images =
                 attributes.post_type === 'image_file' ? ((attributes.post_metadata.image_order || []).map((id) => posts.included.find((item) => item.id === id)?.attributes.image_urls?.original).filter(Boolean) as string[]) : [];
             const postId = attributes.url.match(/-(\d+)$/)?.[1] ?? '';
-            const previewImage = images.length > 0 ? await buildPreviewImageUrl('patreon', postId, images, { imageSize: 440 }) : '';
+            const previewImage = images.length > 0 ? await buildPreviewImageUrl('patreon', postId, images, { imageSize: 400 }) : '';
 
             return {
                 title: `${relationships.images.length}P | ${attributes.title}`,
