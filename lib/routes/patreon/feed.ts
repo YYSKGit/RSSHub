@@ -41,19 +41,41 @@ async function handler(ctx) {
     const baseUrl = 'https://www.patreon.com';
     const link = `${baseUrl}/${creator}`;
 
-    const creatorData = (await cache.tryGet(`patreon:creator:${creator}`, async () => {
-        const response = await ofetch(link);
+    let creatorData;
+    try {
+        creatorData = (await cache.tryGet(`patreon:creator:${creator}`, async () => {
+            const response = await ofetch(link);
 
-        const $ = cheerio.load(response);
-        const nextData = JSON.parse($('#__NEXT_DATA__').text());
-        const bootstrapEnvelope = nextData.props.pageProps.bootstrapEnvelope;
+            const $ = cheerio.load(response);
+            const nextData = JSON.parse($('#__NEXT_DATA__').text());
+            const bootstrapEnvelope = nextData.props.pageProps.bootstrapEnvelope;
 
-        return {
-            meta: bootstrapEnvelope.meta,
-            id: bootstrapEnvelope.pageBootstrap.campaign.data.id,
-            attributes: bootstrapEnvelope.pageBootstrap.campaign.data.attributes,
-        };
-    })) as CreatorData;
+            return {
+                meta: bootstrapEnvelope.meta,
+                id: bootstrapEnvelope.pageBootstrap.campaign.data.id,
+                attributes: bootstrapEnvelope.pageBootstrap.campaign.data.attributes,
+            };
+        })) as CreatorData;
+    } catch (error) {
+        // 特殊处理部分作者的首页
+        switch (creator) {
+            case 'aigirlint':
+                creatorData = {
+                    id: '10432077',
+                    meta: {
+                        title: 'aigirlint',
+                        description: 'A feast for the eyes!',
+                    },
+                    attributes: {
+                        avatar_photo_url:
+                            'https://c10.patreonusercontent.com/4/patreon-media/p/campaign/10432077/3e887d6ac3434910b36ae0a7a7880851/eyJoIjoxMDAsInciOjEwMH0%3D/2.png?token-hash=dZHb1j4_RDQ8rLvZ0c78rbwA_qHB0I1zyGddNmHXWfc%3D&token-time=1758326400',
+                    },
+                };
+                break;
+            default:
+                throw error;
+        }
+    }
 
     if (!creatorData.id) {
         throw new Error('Creator not found');
