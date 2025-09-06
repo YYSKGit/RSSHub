@@ -106,7 +106,7 @@ function compressUrlList(urls: string[]): { prefix: string; files: string; suffi
     // 1. 查找公共前缀
     let prefix = '';
     const firstUrl = urls[0];
-    for (const [i, char] of firstUrl.entries()) {
+    for (const [i, char] of [...firstUrl].entries()) {
         if (urls.every((url) => url.length > i && url[i] === char)) {
             prefix += char;
         } else {
