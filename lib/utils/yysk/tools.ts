@@ -91,6 +91,47 @@ export async function buildPreviewImageUrl(name: string, id: string, imageUrls: 
 }
 
 /**
+ * 构建瀑布流图像的URL
+ * @param {string} name - 瀑布图名称
+ * @param {string} id - 瀑布图ID
+ * @param {string[]} imageUrls - 原始图片URL数组
+ * @param {Object} options - 选项
+ * @param {number} [options.imageWidth=0] - 生成图片的宽度
+ * @param {number} [options.targetCount=50] - 希望合成的目标图片数量
+ * @returns {string} 瀑布流图像的URL
+ */
+export async function buildWaterfallImageUrl(name: string, id: string, imageUrls: string[], { imageWidth = 0, targetCount = 50 } = {}): Promise<string> {
+    const params = new URLSearchParams({ name, id });
+
+    if (imageWidth > 0) {
+        params.append('width', imageWidth.toString());
+    }
+
+    const urlImages = imageUrls.slice(0, targetCount);
+    const { prefix, files, suffix } = compressUrlList(urlImages);
+    params.append('prefix', prefix);
+    params.append('files', files);
+    params.append('suffix', suffix);
+    params.append('key', process.env.ACCESS_KEY ?? '');
+
+    const baseUrl = 'https://api.yyskweb.com/waterfall';
+    const previewImage = `${baseUrl}?${params.toString()}`;
+    if (urlImages.length > 1) {
+        const key = `img/${name}/${id}/waterfall.webp`;
+        if (!(await redis.exists(key))) {
+            axios
+                .get(previewImage, {
+                    headers: {
+                        'User-Agent': 'rsshub-axios',
+                    },
+                })
+                .catch(() => {});
+        }
+    }
+    return previewImage;
+}
+
+/**
  * 压缩 URL 列表，提取公共前后缀
  * @param {string[]} urls - 原始 URL 数组
  * @returns {{prefix: string, files: string, suffix: string}} 压缩后的 URL 组件

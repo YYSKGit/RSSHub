@@ -1,6 +1,6 @@
 import { Route, ViewType } from '@/types';
 import cache from '@/utils/cache';
-import { buildPreviewImageUrl } from '@/utils/yysk/tools';
+import { buildPreviewImageUrl, buildWaterfallImageUrl } from '@/utils/yysk/tools';
 import { getToken } from './token';
 import searchPopularIllust from './api/search-popular-illust';
 import searchIllust from './api/search-illust';
@@ -111,6 +111,8 @@ async function handler(ctx) {
             illusts.map(async (illust) => {
                 const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { imageSize: 300, imageDuration: 0.6, transitionDuration: 0.2, imageFPS: 12 });
                 const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
+                const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+                const waterfallImageHtml = `<img src="${waterfallImage}" style="max-width: 100%; height: auto;"/>`;
                 const images = pixivUtils.getImgs(illust);
                 const tagLinks = illust.tags.map((tag) => {
                     const tagName = tag.name;
@@ -130,6 +132,7 @@ async function handler(ctx) {
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
                     <p>${previewImageHtml}</p>
+                    <p>${waterfallImageHtml}</p>
                     <div>${images.join('<br>')}</div>
                 `,
                     link: `https://www.pixiv.net/artworks/${illust.id}`,
