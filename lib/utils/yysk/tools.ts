@@ -51,15 +51,29 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
  * @returns {string} 预览图像的URL
  */
 export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], { imageSize = 0, imageDuration = 0, transitionDuration = 0, imageFPS = 0, targetCount = 10 } = {}): Promise<string> {
-    const baseUrl = 'https://api.yyskweb.com/animate';
     const params = new URLSearchParams({ name, id });
-    if (imageSize > 0) {params.append('size', imageSize.toString());}
-    if (imageDuration > 0) {params.append('iDur', imageDuration.toString());}
-    if (transitionDuration > 0) {params.append('tDur', transitionDuration.toString());}
-    if (imageFPS > 0) {params.append('fps', imageFPS.toString());}
+
+    if (imageSize > 0) {
+        params.append('size', imageSize.toString());
+    }
+    if (imageDuration > 0) {
+        params.append('iDur', imageDuration.toString());
+    }
+    if (transitionDuration > 0) {
+        params.append('tDur', transitionDuration.toString());
+    }
+    if (imageFPS > 0) {
+        params.append('fps', imageFPS.toString());
+    }
+
     const urlImages = getRepresentativeImages(imageUrls, targetCount);
-    params.append('urls', urlImages.map((url) => encodeURIComponent(url)).join(','));
+    const { prefix, files, suffix } = compressUrlList(urlImages);
+    params.append('prefix', prefix);
+    params.append('files', files);
+    params.append('suffix', suffix);
     params.append('key', process.env.ACCESS_KEY ?? '');
+
+    const baseUrl = 'https://api.yyskweb.com/animate';
     const previewImage = `${baseUrl}?${params.toString()}`;
     if (urlImages.length > 1) {
         const key = `img/${name}/${id}/preview.webp`;
@@ -74,4 +88,56 @@ export async function buildPreviewImageUrl(name: string, id: string, imageUrls: 
         }
     }
     return previewImage;
+}
+
+/**
+ * 压缩 URL 列表，提取公共前后缀
+ * @param {string[]} urls - 原始 URL 数组
+ * @returns {{prefix: string, files: string, suffix: string}} 压缩后的 URL 组件
+ */
+function compressUrlList(urls: string[]): { prefix: string; files: string; suffix: string } {
+    if (!urls || urls.length === 0) {
+        return { prefix: '', files: '', suffix: '' };
+    }
+    if (urls.length === 1) {
+        return { prefix: urls[0], files: '', suffix: '' };
+    }
+
+    // 1. 查找公共前缀
+    let prefix = '';
+    const firstUrl = urls[0];
+    for (const [i, char] of firstUrl.entries()) {
+        if (urls.every((url) => url.length > i && url[i] === char)) {
+            prefix += char;
+        } else {
+            break;
+        }
+    }
+
+    // 如果所有 URL 完全相同，直接返回
+    if (prefix.length === firstUrl.length && urls.every((url) => url === firstUrl)) {
+        return { prefix, files: '', suffix: '' };
+    }
+
+    // 2. 基于移除前缀后的剩余部分来计算后缀
+    const remainders = urls.map((url) => url.slice(prefix.length));
+    const firstRemainder = remainders[0];
+    const minRemainderLength = Math.min(...remainders.map((r) => r.length));
+
+    // 从后往前遍历查找公共后缀
+    let suffix = '';
+    for (let i = 1; i <= minRemainderLength; i++) {
+        const char = firstRemainder[firstRemainder.length - i];
+        if (remainders.every((r) => r[r.length - i] === char)) {
+            suffix = char + suffix;
+        } else {
+            break;
+        }
+    }
+
+    // 3. 提取中间文件部分
+    const files = remainders.map((r) => r.slice(0, Math.max(0, r.length - suffix.length)));
+    const encodedFiles = files.map((f) => encodeURIComponent(f));
+
+    return { prefix, files: encodedFiles.join('|'), suffix };
 }
