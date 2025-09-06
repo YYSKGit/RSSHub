@@ -36,9 +36,10 @@ async function handler(ctx) {
             const illustData = detail.data.illust;
             const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illustData), { imageSize: 300, imageDuration: 0.6, transitionDuration: 0.2, imageFPS: 12 });
             const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
-            const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illustData));
+            const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illustData), { targetColumn: 2, targetCount: 50 });
             const waterfallImageHtml = `<img src="${waterfallImage}" style="max-width: 100%; height: auto;"/>`;
             const images = pixivUtils.getImgs(illustData);
+            const showImages = images.length > 50 ? images.slice(50) : [];
             const tagLinks = illustData.tags.map((tag: { name: string }) => {
                 const tagName = tag.name;
                 const encodedTagName = encodeURIComponent(tagName);
@@ -66,7 +67,7 @@ async function handler(ctx) {
                     <p>${illustData.caption}</p>
                     <p>${previewImageHtml}</p>
                     <p>${waterfallImageHtml}</p>
-                    <div>${images.join('<br>')}</div>
+                    <div>${showImages.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illustData.tags.map((tag: { name: string }) => tag.name),

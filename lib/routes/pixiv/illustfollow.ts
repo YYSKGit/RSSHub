@@ -60,9 +60,10 @@ async function handler() {
             illusts.map(async (illust) => {
                 const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { imageSize: 300, imageDuration: 0.6, transitionDuration: 0.2, imageFPS: 12 });
                 const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
-                const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust));
+                const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { targetColumn: 2, targetCount: 50 });
                 const waterfallImageHtml = `<img src="${waterfallImage}" style="max-width: 100%; height: auto;"/>`;
                 const images = pixivUtils.getImgs(illust);
+                const showImages = images.length > 50 ? images.slice(50) : [];
                 const tagLinks = illust.tags.map((tag) => {
                     const tagName = tag.name;
                     const encodedTagName = encodeURIComponent(tagName);
@@ -82,7 +83,7 @@ async function handler() {
                     <p>${illust.caption}</p>
                     <p>${previewImageHtml}</p>
                     <p>${waterfallImageHtml}</p>
-                    <div>${images.join('<br>')}</div>
+                    <div>${showImages.join('<br>')}</div>
                 `,
                     link: `https://www.pixiv.net/artworks/${illust.id}`,
                     category: illust.tags.map((tag) => tag.name),

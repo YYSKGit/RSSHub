@@ -97,14 +97,18 @@ export async function buildPreviewImageUrl(name: string, id: string, imageUrls: 
  * @param {string[]} imageUrls - 原始图片URL数组
  * @param {Object} options - 选项
  * @param {number} [options.imageWidth=0] - 生成图片的宽度
+ * @param {number} [options.targetColumn=0] - 瀑布流的列数
  * @param {number} [options.targetCount=50] - 希望合成的目标图片数量
  * @returns {string} 瀑布流图像的URL
  */
-export async function buildWaterfallImageUrl(name: string, id: string, imageUrls: string[], { imageWidth = 0, targetCount = 50 } = {}): Promise<string> {
+export async function buildWaterfallImageUrl(name: string, id: string, imageUrls: string[], { imageWidth = 0, targetColumn = 0, targetCount = 50 } = {}): Promise<string> {
     const params = new URLSearchParams({ name, id });
 
     if (imageWidth > 0) {
         params.append('width', imageWidth.toString());
+    }
+    if (targetColumn > 0) {
+        params.append('column', targetColumn.toString());
     }
 
     const urlImages = imageUrls.slice(0, targetCount);
@@ -115,12 +119,12 @@ export async function buildWaterfallImageUrl(name: string, id: string, imageUrls
     params.append('key', process.env.ACCESS_KEY ?? '');
 
     const baseUrl = 'https://api.yyskweb.com/waterfall';
-    const previewImage = `${baseUrl}?${params.toString()}`;
+    const waterfallImage = `${baseUrl}?${params.toString()}`;
     if (urlImages.length > 1) {
         const key = `img/${name}/${id}/waterfall.webp`;
         if (!(await redis.exists(key))) {
             axios
-                .get(previewImage, {
+                .get(waterfallImage, {
                     headers: {
                         'User-Agent': 'rsshub-axios',
                     },
@@ -128,7 +132,7 @@ export async function buildWaterfallImageUrl(name: string, id: string, imageUrls
                 .catch(() => {});
         }
     }
-    return previewImage;
+    return waterfallImage;
 }
 
 /**
