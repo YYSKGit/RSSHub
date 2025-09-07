@@ -1,6 +1,6 @@
 import { Route } from '@/types';
 import cache from '@/utils/cache';
-import { buildPreviewImageUrl, buildWaterfallImageUrl } from '@/utils/yysk/tools';
+import { buildHeaderImageUrl } from '@/utils/yysk/tools';
 import { getToken } from './token';
 import getIllustFollows from './api/get-illust-follows';
 import { config } from '@/config';
@@ -57,11 +57,18 @@ async function handler() {
         link: 'https://www.pixiv.net/bookmark_new_illust.php',
         description: `Pixiv关注的画师们的最新作品`,
         item: await Promise.all(
-            illusts.map(async (illust) => {
-                const previewImage = await buildPreviewImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { imageSize: 300, imageDuration: 0.6, transitionDuration: 0.2, imageFPS: 12 });
-                const previewImageHtml = `<img src="${previewImage}" style="max-width: 100%; height: auto;"/>`;
-                const waterfallImage = await buildWaterfallImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), { targetColumn: 2, targetCount: 50 });
-                const waterfallImageHtml = `<img src="${waterfallImage}" style="max-width: 100%; height: auto;"/>`;
+            illusts.map((illust) => {
+                const buildOptions = {
+                    imageSize: 300,
+                    imageDuration: 0.6,
+                    transitionDuration: 0.2,
+                    imageFPS: 12,
+                    targetColumn: 2,
+                    targetCount: 50,
+                };
+                const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), buildOptions);
+                const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
+
                 const images = pixivUtils.getImgs(illust);
                 const showImages = images.length > 50 ? images.slice(50) : [];
                 const tagLinks = illust.tags.map((tag) => {
@@ -81,8 +88,7 @@ async function handler() {
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
-                    <p>${previewImageHtml}</p>
-                    <p>${waterfallImageHtml}</p>
+                    ${headerImagesHtmls.join('')}
                     <div>${showImages.join('<br>')}</div>
                 `,
                     link: `https://www.pixiv.net/artworks/${illust.id}`,

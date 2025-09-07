@@ -1,10 +1,64 @@
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
+
+const apiClient = axios.create({
+    headers: {
+        'User-Agent': 'rsshub-axios',
+    },
+    timeout: 15 * 1000,
+});
+
+axiosRetry(apiClient, {
+    retries: 3,
+    retryDelay: (retryCount) => retryCount * 1000,
+    retryCondition: (error) => axiosRetry.isNetworkOrIdempotentRequestError(error),
+});
+
+/**
+ * buildHeaderImageUrl 函数的选项
+ */
+type BuildHeaderImageUrlOptions = {
+    // 预览图 (Animate) 的选项
+    imageSize?: number;
+    imageDuration?: number;
+    transitionDuration?: number;
+    imageFPS?: number;
+    previewTargetCount?: number;
+
+    // 瀑布流 (Waterfall) 的选项
+    imageWidth?: number;
+    targetColumn?: number;
+    waterfallTargetCount?: number;
+};
+
+/**
+ * 批量预热请求，将多次 Redis 查询合并为一次
+ * @param items 一个包含 key 和 url 的对象数组
+ */
+async function batchPrewarmRequests(items: { key: string; url: string }[]) {
+    if (items.length === 0) {
+        return;
+    }
+
+    // 使用 mget 一次性从 Redis 查询所有 key 的值
+    // mget 会返回一个值的数组，如果 key 不存在，对应位置的值为 null
+    const keys = items.map((item) => item.key);
+    const existingValues = await redis.mget(keys);
+    const requestsToMake = items.filter((_, index) => existingValues[index] === null);
+
+    if (requestsToMake.length === 0) {
+        return;
+    }
+
+    const prewarmPromises = requestsToMake.map((item) => apiClient.get(item.url).catch(() => {}));
+    await Promise.allSettled(prewarmPromises);
+}
 
 /**
  * 从一个图片URL数组中，智能筛选出指定数量的代表性图片。
@@ -38,101 +92,77 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
 }
 
 /**
- * 构建预览图像的URL
- * @param {string} name - 动图名称
- * @param {string} id - 动图ID
+ * 构建头部图像（预览动图和瀑布流图）的URL数组
+ * @param {string} name - 图像名称
+ * @param {string} id - 图像ID
  * @param {string[]} imageUrls - 原始图片URL数组
- * @param {Object} options - 选项
- * @param {number} [options.imageSize=0] - 生成图片的长宽尺寸
- * @param {number} [options.imageDuration=0] - 动图的显示时长，单位为秒
- * @param {number} [options.transitionDuration=0] - 动图的过渡时长，单位为秒
- * @param {number} [options.imageFPS=0] - 动图的帧率
- * @param {number} [options.targetCount=10] - 希望合成的目标图片数量
- * @returns {string} 预览图像的URL
+ * @param {BuildHeaderImageUrlOptions} options - 包含所有类型图像的配置选项
+ * @returns {string[]} 返回一个包含两个URL的数组: [previewImageUrl, waterfallImageUrl]
  */
-export async function buildPreviewImageUrl(name: string, id: string, imageUrls: string[], { imageSize = 0, imageDuration = 0, transitionDuration = 0, imageFPS = 0, targetCount = 10 } = {}): Promise<string> {
-    const params = new URLSearchParams({ name, id });
+export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[], options: BuildHeaderImageUrlOptions = {}): string[] {
+    const API_BASE = 'https://api.yyskweb.com';
+    const accessKey = process.env.ACCESS_KEY ?? '';
+    const prewarmItems: { key: string; url: string }[] = [];
 
-    if (imageSize > 0) {
-        params.append('size', imageSize.toString());
-    }
-    if (imageDuration > 0) {
-        params.append('iDur', imageDuration.toString());
-    }
-    if (transitionDuration > 0) {
-        params.append('tDur', transitionDuration.toString());
-    }
-    if (imageFPS > 0) {
-        params.append('fps', imageFPS.toString());
-    }
+    /**
+     * 内部通用的URL构建逻辑
+     * @param {'preview' | 'waterfall'} type - 要构建的URL类型
+     */
+    const buildUrl = (type: 'preview' | 'waterfall'): string => {
+        const params = new URLSearchParams({ name, id });
+        let baseUrl = '';
+        let selectedImages: string[] = [];
+        let prewarmKey = '';
 
-    const urlImages = getRepresentativeImages(imageUrls, targetCount);
-    const { prefix, files, suffix } = compressUrlList(urlImages);
-    params.append('prefix', prefix);
-    params.append('files', files);
-    params.append('suffix', suffix);
-    params.append('key', process.env.ACCESS_KEY ?? '');
+        if (type === 'preview') {
+            // --- 预览图 (Animate) 的逻辑 ---
+            const { imageSize = 0, imageDuration = 0, transitionDuration = 0, imageFPS = 0, previewTargetCount = 10 } = options;
 
-    const baseUrl = 'https://api.yyskweb.com/animate';
-    const previewImage = `${baseUrl}?${params.toString()}`;
-    if (urlImages.length > 1) {
-        const key = `img/${name}/${id}/preview.webp`;
-        if (!(await redis.exists(key))) {
-            axios
-                .get(previewImage, {
-                    headers: {
-                        'User-Agent': 'rsshub-axios',
-                    },
-                })
-                .catch(() => {});
+            baseUrl = `${API_BASE}/animate`;
+            prewarmKey = `img/${name}/${id}/preview.webp`;
+
+            if (imageSize > 0) {params.append('size', imageSize.toString());}
+            if (imageDuration > 0) {params.append('iDur', imageDuration.toString());}
+            if (transitionDuration > 0) {params.append('tDur', transitionDuration.toString());}
+            if (imageFPS > 0) {params.append('fps', imageFPS.toString());}
+
+            selectedImages = getRepresentativeImages(imageUrls, previewTargetCount);
+        } else {
+            // --- 瀑布流图 (Waterfall) 的逻辑 ---
+            const { imageWidth = 0, targetColumn = 0, waterfallTargetCount = 50 } = options;
+
+            baseUrl = `${API_BASE}/waterfall`;
+            prewarmKey = `img/${name}/${id}/waterfall.webp`;
+
+            if (imageWidth > 0) {params.append('width', imageWidth.toString());}
+            if (targetColumn > 0) {params.append('column', targetColumn.toString());}
+
+            selectedImages = imageUrls.slice(0, waterfallTargetCount);
         }
-    }
-    return previewImage;
-}
 
-/**
- * 构建瀑布流图像的URL
- * @param {string} name - 瀑布图名称
- * @param {string} id - 瀑布图ID
- * @param {string[]} imageUrls - 原始图片URL数组
- * @param {Object} options - 选项
- * @param {number} [options.imageWidth=0] - 生成图片的宽度
- * @param {number} [options.targetColumn=0] - 瀑布流的列数
- * @param {number} [options.targetCount=50] - 希望合成的目标图片数量
- * @returns {string} 瀑布流图像的URL
- */
-export async function buildWaterfallImageUrl(name: string, id: string, imageUrls: string[], { imageWidth = 0, targetColumn = 0, targetCount = 50 } = {}): Promise<string> {
-    const params = new URLSearchParams({ name, id });
-
-    if (imageWidth > 0) {
-        params.append('width', imageWidth.toString());
-    }
-    if (targetColumn > 0) {
-        params.append('column', targetColumn.toString());
-    }
-
-    const urlImages = imageUrls.slice(0, targetCount);
-    const { prefix, files, suffix } = compressUrlList(urlImages);
-    params.append('prefix', prefix);
-    params.append('files', files);
-    params.append('suffix', suffix);
-    params.append('key', process.env.ACCESS_KEY ?? '');
-
-    const baseUrl = 'https://api.yyskweb.com/waterfall';
-    const waterfallImage = `${baseUrl}?${params.toString()}`;
-    if (urlImages.length > 1) {
-        const key = `img/${name}/${id}/waterfall.webp`;
-        if (!(await redis.exists(key))) {
-            axios
-                .get(waterfallImage, {
-                    headers: {
-                        'User-Agent': 'rsshub-axios',
-                    },
-                })
-                .catch(() => {});
+        // --- 通用逻辑 ---
+        if (selectedImages.length > 0) {
+            const { prefix, files, suffix } = compressUrlList(selectedImages);
+            params.append('prefix', prefix);
+            params.append('files', files);
+            params.append('suffix', suffix);
         }
-    }
-    return waterfallImage;
+        params.append('key', accessKey);
+
+        const finalUrl = `${baseUrl}?${params.toString()}`;
+
+        if (selectedImages.length > 1) {
+            prewarmItems.push({ key: prewarmKey, url: finalUrl });
+        }
+
+        return finalUrl;
+    };
+
+    const previewImageUrl = buildUrl('preview');
+    const waterfallImageUrl = buildUrl('waterfall');
+    batchPrewarmRequests(prewarmItems);
+
+    return [previewImageUrl, waterfallImageUrl];
 }
 
 /**
