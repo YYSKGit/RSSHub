@@ -56,48 +56,46 @@ async function handler() {
         title: `Pixiv关注的新作品`,
         link: 'https://www.pixiv.net/bookmark_new_illust.php',
         description: `Pixiv关注的画师们的最新作品`,
-        item: await Promise.all(
-            illusts.map((illust) => {
-                const buildOptions = {
-                    imageSize: 300,
-                    imageDuration: 0.6,
-                    transitionDuration: 0.2,
-                    imageFPS: 12,
-                    targetColumn: 2,
-                    waterfallTargetCount: 50,
-                };
-                const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), buildOptions);
-                const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
+        item: illusts.map((illust) => {
+            const buildOptions = {
+                imageSize: 300,
+                imageDuration: 0.6,
+                transitionDuration: 0.2,
+                imageFPS: 12,
+                targetColumn: 2,
+                waterfallTargetCount: 50,
+            };
+            const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), buildOptions);
+            const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
 
-                // 已使用瀑布流展示图片，原始图片暂不显示
-                // const images = pixivUtils.getImgs(illust);
-                // const showImages = images.length > 50 ? images.slice(50) : [];
-                // <div>${showImages.join('<br>')}</div>
+            // 已使用瀑布流展示图片，原始图片暂不显示
+            // const images = pixivUtils.getImgs(illust);
+            // const showImages = images.length > 50 ? images.slice(50) : [];
+            // <div>${showImages.join('<br>')}</div>
 
-                const tagLinks = illust.tags.map((tag) => {
-                    const tagName = tag.name;
-                    const encodedTagName = encodeURIComponent(tagName);
-                    const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
-                    return `<a href="${tagUrl}">#${tagName}</a>`;
-                });
-                const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
-                const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
-                const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
+            const tagLinks = illust.tags.map((tag) => {
+                const tagName = tag.name;
+                const encodedTagName = encodeURIComponent(tagName);
+                const tagUrl = `https://www.pixiv.net/tags/${encodedTagName}`;
+                return `<a href="${tagUrl}">#${tagName}</a>`;
+            });
+            const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
+            const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
+            const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
 
-                return {
-                    title: `${illust.page_count}P | ${illust.title}`,
-                    author: illust.user.name,
-                    pubDate: parseDate(illust.create_date),
-                    description: `
+            return {
+                title: `${illust.page_count}P | ${illust.title}`,
+                author: illust.user.name,
+                pubDate: parseDate(illust.create_date),
+                description: `
                     <p>${showTags.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
                     ${headerImagesHtmls.join('')}
                 `,
-                    link: `https://www.pixiv.net/artworks/${illust.id}`,
-                    category: illust.tags.map((tag) => tag.name),
-                };
-            })
-        ),
+                link: `https://www.pixiv.net/artworks/${illust.id}`,
+                category: illust.tags.map((tag) => tag.name),
+            };
+        }),
     };
 }

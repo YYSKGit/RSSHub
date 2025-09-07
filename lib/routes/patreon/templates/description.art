@@ -1,5 +1,7 @@
-{{ if previewImage }}
-    <p><img src="{{ previewImage }}" style="max-width: 100%; height: auto;"/></p>
+{{ if headerImages }}
+    {{ each headerImages headerImage }}
+        <p><img src="{{ headerImage }}" style="max-width: 100%; height: auto;"/></p>
+    {{ /each }}
 {{ /if }}
 
 {{ if attributes.post_type === 'image_file' }}
