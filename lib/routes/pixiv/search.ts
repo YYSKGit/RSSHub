@@ -115,13 +115,16 @@ async function handler(ctx) {
                     transitionDuration: 0.2,
                     imageFPS: 12,
                     targetColumn: 2,
-                    targetCount: 50,
+                    waterfallTargetCount: 50,
                 };
                 const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), buildOptions);
                 const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
 
-                const images = pixivUtils.getImgs(illust);
-                const showImages = images.length > 50 ? images.slice(50) : [];
+                // 已使用瀑布流展示图片，原始图片暂不显示
+                // const images = pixivUtils.getImgs(illust);
+                // const showImages = images.length > 50 ? images.slice(50) : [];
+                // <div>${showImages.join('<br>')}</div>
+
                 const tagLinks = illust.tags.map((tag) => {
                     const tagName = tag.name;
                     const encodedTagName = encodeURIComponent(tagName);
@@ -131,6 +134,7 @@ async function handler(ctx) {
                 const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
                 const userLink = `<strong><a href="https://www.pixiv.net/users/${illust.user.id}">@${illust.user.name}</a></strong>`;
                 const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
+
                 return {
                     title: `${illust.page_count}P | ${illust.title}`,
                     author: illust.user.name,
@@ -140,7 +144,6 @@ async function handler(ctx) {
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illust.caption}</p>
                     ${headerImagesHtmls.join('')}
-                    <div>${showImages.join('<br>')}</div>
                 `,
                     link: `https://www.pixiv.net/artworks/${illust.id}`,
                     category: illust.tags.map((tag) => tag.name),

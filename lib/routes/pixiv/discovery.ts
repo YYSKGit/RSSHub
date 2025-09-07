@@ -41,13 +41,16 @@ async function handler(ctx) {
                 transitionDuration: 0.2,
                 imageFPS: 12,
                 targetColumn: 2,
-                targetCount: 50,
+                waterfallTargetCount: 50,
             };
             const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illustData), buildOptions);
             const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
 
-            const images = pixivUtils.getImgs(illustData);
-            const showImages = images.length > 50 ? images.slice(50) : [];
+            // 已使用瀑布流展示图片，原始图片暂不显示
+            // const images = pixivUtils.getImgs(illustData);
+            // const showImages = images.length > 50 ? images.slice(50) : [];
+            // <div>${showImages.join('<br>')}</div>
+
             const tagLinks = illustData.tags.map((tag: { name: string }) => {
                 const tagName = tag.name;
                 const encodedTagName = encodeURIComponent(tagName);
@@ -57,6 +60,7 @@ async function handler(ctx) {
             const aiTypeText = '<strong><a href="https://www.pixiv.net/tags/AI/artworks?s_mode=s_tag">#AI生成</a></strong>';
             const userLink = `<strong><a href="https://www.pixiv.net/users/${illustData.user.id}">@${illustData.user.name}</a></strong>`;
             const showTags = [userLink, ...(illustData.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
+
             const showType = () => {
                 if (cmTags.some((tag) => illustData.tags.some((t) => t.name === tag))) {
                     return '[催眠]';
@@ -65,6 +69,7 @@ async function handler(ctx) {
                 }
                 return '[其他]';
             };
+
             return {
                 title: `${illustData.page_count}P | ${showType()} ${illustData.title}`,
                 author: illustData.user.name,
@@ -74,7 +79,6 @@ async function handler(ctx) {
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${illustData.caption}</p>
                     ${headerImagesHtmls.join('')}
-                    <div>${showImages.join('<br>')}</div>
                 `,
                 link: `https://www.pixiv.net/artworks/${illust.id}`,
                 category: illustData.tags.map((tag: { name: string }) => tag.name),
