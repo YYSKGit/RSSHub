@@ -109,6 +109,7 @@ async function handler(ctx) {
         link: `https://www.pixiv.net/tags/${keyword}/artworks`,
         item: illusts.map((illust) => {
             const buildOptions = {
+                prewarmThreshold: 5,
                 imageSize: 300,
                 imageDuration: 0.6,
                 transitionDuration: 0.2,

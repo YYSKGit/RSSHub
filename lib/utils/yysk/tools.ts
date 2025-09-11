@@ -24,6 +24,9 @@ axiosRetry(apiClient, {
  * buildHeaderImageUrl 函数的选项
  */
 type BuildHeaderImageUrlOptions = {
+    // 通用选项
+    prewarmThreshold?: number;
+
     // 预览图 (Animate) 的选项
     imageSize?: number;
     imageDuration?: number;
@@ -121,10 +124,18 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
             baseUrl = `${API_BASE}/animate`;
             prewarmKey = `img/${name}/${id}/preview.webp`;
 
-            if (imageSize > 0) {params.append('size', imageSize.toString());}
-            if (imageDuration > 0) {params.append('iDur', imageDuration.toString());}
-            if (transitionDuration > 0) {params.append('tDur', transitionDuration.toString());}
-            if (imageFPS > 0) {params.append('fps', imageFPS.toString());}
+            if (imageSize > 0) {
+                params.append('size', imageSize.toString());
+            }
+            if (imageDuration > 0) {
+                params.append('iDur', imageDuration.toString());
+            }
+            if (transitionDuration > 0) {
+                params.append('tDur', transitionDuration.toString());
+            }
+            if (imageFPS > 0) {
+                params.append('fps', imageFPS.toString());
+            }
 
             selectedImages = getRepresentativeImages(imageUrls, previewTargetCount);
         } else {
@@ -134,8 +145,12 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
             baseUrl = `${API_BASE}/waterfall`;
             prewarmKey = `img/${name}/${id}/waterfall.webp`;
 
-            if (imageWidth > 0) {params.append('width', imageWidth.toString());}
-            if (targetColumn > 0) {params.append('column', targetColumn.toString());}
+            if (imageWidth > 0) {
+                params.append('width', imageWidth.toString());
+            }
+            if (targetColumn > 0) {
+                params.append('column', targetColumn.toString());
+            }
 
             selectedImages = imageUrls.slice(0, waterfallTargetCount);
         }
@@ -151,7 +166,8 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
 
         const finalUrl = `${baseUrl}?${params.toString()}`;
 
-        if (selectedImages.length > 1) {
+        const { prewarmThreshold = 2 } = options;
+        if (selectedImages.length >= prewarmThreshold) {
             prewarmItems.push({ key: prewarmKey, url: finalUrl });
         }
 
