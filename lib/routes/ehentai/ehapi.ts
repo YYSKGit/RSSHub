@@ -29,8 +29,8 @@ function ehgot(url) {
 function ehgot_thumb(cache, thumb_url) {
     return cache.tryGet(thumb_url, async () => {
         try {
-            const buffer = await got({ method: 'get', url: thumb_url, headers });
-            const data = new Buffer.from(buffer.rawBody).toString('base64');
+            const buffer = await got({ method: 'get', responseType: 'buffer', url: thumb_url, headers });
+            const data = buffer.body.toString('base64');
             const ext = path.extname(thumb_url).slice(1);
             return `data:image/${ext};base64,${data}`;
         } catch (error) {
