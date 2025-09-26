@@ -188,6 +188,7 @@ export type Config = {
     };
     hefeng: {
         key?: string;
+        apiHost?: string;
     };
     infzm: {
         cookie?: string;
@@ -665,6 +666,7 @@ const calculateValue = () => {
         },
         hefeng: {
             key: envs.HEFENG_KEY,
+            apiHost: envs.HEFENG_API_HOST,
         },
         infzm: {
             cookie: envs.INFZM_COOKIE,
