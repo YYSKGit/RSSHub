@@ -1,18 +1,37 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
 
-const { KV_ACCOUNT_ID, KV_NAMESPACE, KV_API_TOKEN } = process.env;
-if (!KV_ACCOUNT_ID || !KV_NAMESPACE || !KV_API_TOKEN) {
-    throw new Error('KV_ACCOUNT_ID, KV_NAMESPACE, and KV_API_TOKEN must be set in environment variables');
-}
+let kvClient: AxiosInstance;
 
-const kvClient = axios.create({
-    baseURL: `https://api.cloudflare.com/client/v4/accounts/${KV_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE}`,
-    headers: {
-        Authorization: `Bearer ${KV_API_TOKEN}`,
-        'Content-Type': 'application/json',
-    },
-});
+/**
+ * 获取 Cloudflare KV 客户端实例
+ * @returns {AxiosInstance} 已配置的 KV 实例
+ */
+function getKVClient(): AxiosInstance {
+    if (kvClient) {
+        return kvClient;
+    }
+
+    const { KV_ACCOUNT_ID, KV_NAMESPACE, KV_API_TOKEN } = process.env;
+    if (!KV_ACCOUNT_ID || !KV_NAMESPACE || !KV_API_TOKEN) {
+        throw new Error('KV_ACCOUNT_ID, KV_NAMESPACE, and KV_API_TOKEN must be set in environment variables for runtime');
+    }
+
+    kvClient = axios.create({
+        baseURL: `https://api.cloudflare.com/client/v4/accounts/${KV_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE}`,
+        headers: {
+            Authorization: `Bearer ${KV_API_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    axiosRetry(kvClient, {
+        retries: 3,
+        retryDelay: (retryCount) => retryCount * 1000,
+    });
+
+    return kvClient;
+}
 
 const apiClient = axios.create({
     headers: {
@@ -58,7 +77,7 @@ async function batchPrewarmRequests(items: { key: string; url: string }[]) {
 
     // 一次性从 Worker-KV 查询所有 key 的值
     const keys = items.map((item) => item.key);
-    const response = await kvClient.post('/bulk/get', { keys });
+    const response = await getKVClient().post('/bulk/get', { keys });
     const kvValues: Record<string, string> = response.data.result.values;
     const requestsToMake = items.filter((item) => kvValues[item.key] === null);
 
