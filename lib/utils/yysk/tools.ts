@@ -1,10 +1,17 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+const { KV_ACCOUNT_ID, KV_NAMESPACE, KV_API_TOKEN } = process.env;
+if (!KV_ACCOUNT_ID || !KV_NAMESPACE || !KV_API_TOKEN) {
+    throw new Error('KV_ACCOUNT_ID, KV_NAMESPACE, and KV_API_TOKEN must be set in environment variables');
+}
+
+const kvClient = axios.create({
+    baseURL: `https://api.cloudflare.com/client/v4/accounts/${KV_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE}`,
+    headers: {
+        Authorization: `Bearer ${KV_API_TOKEN}`,
+        'Content-Type': 'application/json',
+    },
 });
 
 const apiClient = axios.create({
@@ -41,7 +48,7 @@ type BuildHeaderImageUrlOptions = {
 };
 
 /**
- * 批量预热请求，将多次 Redis 查询合并为一次
+ * 批量预热请求，将多次 KV 查询合并为一次
  * @param items 一个包含 key 和 url 的对象数组
  */
 async function batchPrewarmRequests(items: { key: string; url: string }[]) {
@@ -49,11 +56,11 @@ async function batchPrewarmRequests(items: { key: string; url: string }[]) {
         return;
     }
 
-    // 使用 mget 一次性从 Redis 查询所有 key 的值
-    // mget 会返回一个值的数组，如果 key 不存在，对应位置的值为 null
+    // 一次性从 Worker-KV 查询所有 key 的值
     const keys = items.map((item) => item.key);
-    const existingValues = await redis.mget(keys);
-    const requestsToMake = items.filter((_, index) => existingValues[index] === null);
+    const response = await kvClient.post('/bulk/get', { keys });
+    const kvValues: Record<string, string> = response.data.result.values;
+    const requestsToMake = items.filter((item) => kvValues[item.key] === null);
 
     if (requestsToMake.length === 0) {
         return;
@@ -122,7 +129,7 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
             const { imageSize = 0, imageDuration = 0, transitionDuration = 0, imageFPS = 0, previewTargetCount = 10 } = options;
 
             baseUrl = `${API_BASE}/animate`;
-            prewarmKey = `img/${name}/${id}/preview.webp`;
+            prewarmKey = `cache/animate/${name}/${id}/1`;
 
             if (imageSize > 0) {
                 params.append('size', imageSize.toString());
@@ -143,7 +150,7 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
             const { imageWidth = 0, targetColumn = 0, waterfallTargetCount = 50 } = options;
 
             baseUrl = `${API_BASE}/waterfall`;
-            prewarmKey = `img/${name}/${id}/waterfall.webp`;
+            prewarmKey = `cache/waterfall/${name}/${id}/1`;
 
             if (imageWidth > 0) {
                 params.append('width', imageWidth.toString());
