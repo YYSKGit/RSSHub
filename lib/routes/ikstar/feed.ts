@@ -82,7 +82,7 @@ async function handler(ctx) {
                     const relativePath = img.attr('data-echo') || img.attr('zoomfile') || img.attr('file') || img.attr('src');
                     if (relativePath) {
                         const fullUrl = new URL(`${relativePath}?key=${proxyKey}`, proxyUrl).href;
-                        const newImageHtml = `<img src="${fullUrl}" style="max-width: 100%; height: auto;">`;
+                        const newImageHtml = `<p><img src="${fullUrl}" style="max-width: 100%; height: auto;"></p>`;
                         wrapper.replaceWith(newImageHtml);
                     } else {
                         wrapper.remove();
@@ -117,11 +117,13 @@ async function handler(ctx) {
                 }
                 const pubDate = $('[id^="authorposton"]').first().text();
 
-                // 清理文章首尾<br>元素
+                // 清理文章内多余的<br>元素
                 let finalHtml = content.html();
                 if (finalHtml) {
                     finalHtml = finalHtml
                         .trim()
+                        .replaceAll(/(?<=<\/p>)(\s*<br\s*\/?>\s*)+/gi, '')
+                        .replaceAll(/(\s*<br\s*\/?>\s*)+(?=<p[^>]*>)/gi, '')
                         .replace(/^(\s*<br\s*\/?>\s*)+/i, '')
                         .replace(/(\s*<br\s*\/?>\s*)+$/i, '');
                 }
@@ -135,7 +137,7 @@ async function handler(ctx) {
                             <p>${showTags.join(', ')}</p>
                             <hr style="border: none; height: 1px; background-color: #000000;">
                             <p><img src="${item.cover}" style="max-width: 100%; height: auto;"></p>
-                            <p>${finalHtml}</p>
+                            ${finalHtml}
                         `,
                     category: typeName,
                 };
