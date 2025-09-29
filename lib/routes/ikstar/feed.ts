@@ -82,7 +82,7 @@ async function handler(ctx) {
                     const relativePath = img.attr('data-echo') || img.attr('zoomfile') || img.attr('file') || img.attr('src');
                     if (relativePath) {
                         const fullUrl = new URL(`${relativePath}?key=${proxyKey}`, proxyUrl).href;
-                        const newImageHtml = `<p><img src="${fullUrl}" style="max-width: 100%; height: auto;"></p>`;
+                        const newImageHtml = `<img src="${fullUrl}" style="max-width: 100%; height: auto;">`;
                         wrapper.replaceWith(newImageHtml);
                     } else {
                         wrapper.remove();
@@ -135,7 +135,7 @@ async function handler(ctx) {
                             <p>${showTags.join(', ')}</p>
                             <hr style="border: none; height: 1px; background-color: #000000;">
                             <p><img src="${item.cover}" style="max-width: 100%; height: auto;"></p>
-                            ${finalHtml}
+                            <p>${finalHtml}</p>
                         `,
                     category: typeName,
                 };
