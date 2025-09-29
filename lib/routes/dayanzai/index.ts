@@ -5,7 +5,7 @@ import { load } from 'cheerio';
 import { parseDate, parseRelativeDate } from '@/utils/parse-date';
 import timezone from '@/utils/timezone';
 
-const rootUrl = 'http://www.dayanzai.me/';
+const rootUrl = 'https://www.dayanzai.me/';
 
 export const route: Route = {
     path: '/:category/:fulltext?',
