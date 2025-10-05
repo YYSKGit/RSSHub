@@ -12,7 +12,6 @@ export const route: Route = {
 async function handler() {
     const baseUrl = 'https://libfans.com';
     const apiUrl = new URL('/includes/ajax/data/load.php', baseUrl).href;
-    const defaultImgs = new Set(['https://libfans.com/content/themes/default/images/og-image.jpg', 'https://drive.proton.me/assets/proton-og-image.png']);
     const userCookie = process.env.LIBFANS_COOKIE;
 
     // 并行请求多个页面
@@ -44,22 +43,42 @@ async function handler() {
             const $item = $(item);
             const authorLink = $item.find('a.post-author');
             const timeLink = $item.find('a.js_moment');
-            const descriptionContainer = $item.find('.post-text.js_readmore');
+            const $descriptionContainer = $item.find('.post-text.js_readmore');
 
             // 过滤掉没有内容的条目
-            if (!descriptionContainer.html()?.trim()) {
+            if (!$descriptionContainer.html()?.trim()) {
                 return null;
             }
 
-            // 提取图片链接
-            let imageElement = '';
-            const imageDiv = $item.find('div.mt10.plr15 div.image');
-            if (imageDiv.length) {
-                const style = imageDiv.attr('style');
-                const match = style!.match(/url\(['"]?(.+?)['"]?\)/);
-                if (match && match[1] && !defaultImgs.has(match[1])) {
-                    imageElement = `<p><img src="${match[1]}" style="max-width: 100%; height: auto;"></p>`;
+            // 替换图片链接为<img>标签
+            $descriptionContainer.find('a').each((_, element) => {
+                const $link = $(element);
+                const href = $link.attr('href');
+                if (href && /\.(jpg|jpeg|png|gif|webp)$/i.test(href)) {
+                    const imgTag = `<p><img src="${href}" style="max-width: 100%; height: auto;"></p>`;
+                    $link.replaceWith(imgTag);
                 }
+            });
+
+            // 移除<img>段落周围所有连续的<br>标签
+            $descriptionContainer.find('p:has(img)').each((_, pElement) => {
+                const $p = $(pElement);
+                $p.nextUntil(':not(br)').remove();
+                $p.prevUntil(':not(br)').remove();
+            });
+
+            // 清理条目首尾<br>元素
+            let finalHtml = $descriptionContainer.html() || '';
+            if (finalHtml) {
+                finalHtml = finalHtml
+                    .trim()
+                    .replace(/^(\s*<br\s*\/?>\s*)+/i, '')
+                    .replace(/(\s*<br\s*\/?>\s*)+$/i, '');
+            }
+
+            // 确保条目以段落元素开头
+            if (!finalHtml.startsWith('<p>')) {
+                finalHtml = `<p></p>${finalHtml}`;
             }
 
             return {
@@ -70,8 +89,7 @@ async function handler() {
                 description: `
                 <p><a href="${authorLink.attr('href')}">@${authorLink.text()}</a></p>
                 <hr style="border: none; height: 1px; background-color: #000000;">
-                ${imageElement}
-                <p>${descriptionContainer.html()}</p>
+                ${finalHtml}
                 `,
             };
         })
