@@ -14,6 +14,12 @@ async function handler() {
     const apiUrl = new URL('/includes/ajax/data/load.php', baseUrl).href;
     const userCookie = process.env.LIBFANS_COOKIE;
 
+    // 配置图片代理
+    const proxyConfig = {
+        'gzroom.wordpress.com': 'gzroom.yyskweb.com',
+    };
+    const proxyKey = process.env.ACCESS_KEY;
+
     // 并行请求多个页面
     const pageRequests = Array.from({ length: 5 }, (_, i) =>
         got({
@@ -50,12 +56,26 @@ async function handler() {
                 return null;
             }
 
-            // 替换图片链接为<img>标签
+            // 替换图片链接为<img>标签，并应用域名代理
             $descriptionContainer.find('a').each((_, element) => {
                 const $link = $(element);
                 const href = $link.attr('href');
                 if (href && /\.(jpg|jpeg|png|gif|webp)$/i.test(href)) {
-                    const imgTag = `<p><img src="${href}" style="max-width: 100%; height: auto;"></p>`;
+                    let finalImageUrl = href;
+                    try {
+                        const imageUrl = new URL(href);
+                        if (proxyConfig[imageUrl.hostname]) {
+                            imageUrl.hostname = proxyConfig[imageUrl.hostname];
+                            if (proxyKey) {
+                                imageUrl.searchParams.set('key', proxyKey);
+                            }
+                            finalImageUrl = imageUrl.toString();
+                        }
+                    } catch {
+                        // 忽略无效的URL，保持原始链接
+                    }
+
+                    const imgTag = `<p><img src="${finalImageUrl}" style="max-width: 100%; height: auto;"></p>`;
                     $link.replaceWith(imgTag);
                 }
             });
@@ -87,10 +107,10 @@ async function handler() {
                 pubDate: parseDate(timeLink.attr('data-time')! + 'Z'),
                 author: authorLink.text(),
                 description: `
-                <p><a href="${authorLink.attr('href')}">@${authorLink.text()}</a></p>
-                <hr style="border: none; height: 1px; background-color: #000000;">
-                ${finalHtml}
-                `,
+                    <p><a href="${authorLink.attr('href')}">@${authorLink.text()}</a></p>
+                    <hr style="border: none; height: 1px; background-color: #000000;">
+                    ${finalHtml}
+                    `,
             };
         })
         .filter(Boolean);
