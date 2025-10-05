@@ -119,7 +119,7 @@ async function handler(ctx) {
                 waterfallTargetCount: 50,
             };
             const headerImages = buildHeaderImageUrl('pixiv', illust.id, pixivUtils.getImgUrls(illust), buildOptions);
-            const headerImagesHtmls = headerImages.map((url) => `<img src="${url}" style="max-width: 100%; height: auto;"/>`);
+            const headerImagesHtmls = headerImages.map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"/></p>`);
 
             // 已使用瀑布流展示图片，原始图片暂不显示
             // const images = pixivUtils.getImgs(illust);
