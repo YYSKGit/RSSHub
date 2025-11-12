@@ -132,6 +132,7 @@ jobs:
           # 缓存设置: 使用 GitHub Actions 的缓存来加速后续的构建
           cache-from: type=gha,scope=docker-release
           cache-to: type=gha,mode=max,scope=docker-release
+          outputs: type=image,compression=zstd,force-compression=true
 
   # --- 第三个任务：更新 Docker Hub 描述 ---
   # 这个任务负责将仓库的 README.md 文件内容同步到 Docker Hub 的项目描述中
