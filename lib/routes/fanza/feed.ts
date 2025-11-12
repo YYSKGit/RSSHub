@@ -156,7 +156,7 @@ async function handler(ctx) {
         };
         const tagHtmls = [makerHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls, ...numberHtml()];
         return {
-            title: detailData.title,
+            title: `【${detailData.makerContentId}】${detailData.title}`,
             author: detailData.maker.name,
             pubDate: parseDate(detailData.deliveryStartDate),
             description: `
