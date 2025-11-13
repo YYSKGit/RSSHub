@@ -127,8 +127,8 @@ jobs:
           # tags 和 labels 使用上一步 'meta-ordinary' 生成的结果
           tags: ${{ steps.meta-ordinary.outputs.tags }}
           labels: ${{ steps.meta-ordinary.outputs.labels }}
-          # 简化点: 指定构建的平台架构，这里只构建 linux/amd64
-          platforms: linux/amd64
+          # 简化点: 指定构建的平台架构，这里指定为 amd64 和 arm64 两种常见架构
+          platforms: linux/amd64,linux/arm64
           # 缓存设置: 使用 GitHub Actions 的缓存来加速后续的构建
           cache-from: type=gha,scope=docker-release
           cache-to: type=gha,mode=max,scope=docker-release
