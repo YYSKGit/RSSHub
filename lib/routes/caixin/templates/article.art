@@ -13,12 +13,10 @@
 
 {{ if $('.article .content_video').length }}
     <% const video = $('script').text().match(/initPlayer\('(.*?)','(.*?)'\)/); %>
-    {{ if video}}
-        <% const videoUrl = video[1]; %>
-        <% const poster = video[2]; %>
-        <video controls preload="metadata" poster="{{ poster }}" src="{{ videoUrl }}"></video>
-        <br>
-    {{ /if }}
+    <% const videoUrl = video[1]; %>
+    <% const poster = video[2]; %>
+    <video controls preload="metadata" poster="{{ poster }}" src="{{ videoUrl }}"></video>
+    <br>
 {{ /if }}
 
 {{ if $('div#Main_Content_Val.text').length }}

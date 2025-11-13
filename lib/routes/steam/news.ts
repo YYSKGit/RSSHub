@@ -256,7 +256,6 @@ const customPreset: PresetFactory = presetHTML5.extend((tags) => ({
             title: 'YouTube video player',
             frameborder: '0',
             allowFullScreen: '1',
-            refererpolicy: 'strict-origin-when-cross-origin',
         },
     }),
     video: (node, { render }) => ({

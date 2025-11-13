@@ -1,11 +1,10 @@
 import { Route } from '@/types';
 
-import ofetch from '@/utils/ofetch';
+import got from '@/utils/got';
 import { load } from 'cheerio';
 import { config } from '@/config';
 import path from 'node:path';
 import { art } from '@/utils/render';
-import xxhash from 'xxhash-wasm';
 
 export const route: Route = {
     path: '/list/:id',
@@ -35,27 +34,26 @@ export const route: Route = {
     maintainers: ['akynazh'],
     handler,
     description: `::: tip
-将榜单条目集合到一个列表中，且有热度排序，可避免推送大量条目。
+将榜单条目集合到一个列表中，可避免推送大量条目，更符合阅读习惯且有热度排序，推荐使用。
 :::`,
 };
 
 async function handler(ctx) {
-    const { h64ToString } = await xxhash();
     const id = ctx.req.param('id');
     const link = `https://tophub.today/n/${id}`;
-    const response = await ofetch(link, {
+    const response = await got.get(link, {
         headers: {
             Referer: 'https://tophub.today',
-            Cookie: config.tophub?.cookie ?? '',
+            Cookie: config.tophub.cookie,
         },
     });
-    const $ = load(response);
-    const title = $('.tt h3').text().trim();
-    const items = $('.rank-all-item:not(.history-content) .jc-c tr')
+    const $ = load(response.data);
+    const title = $('div.Xc-ec-L.b-L').text().trim();
+    const items = $('div.Zd-p-Sc > div:nth-child(1) tr')
         .toArray()
         .map((e) => ({
-            title: $(e).find('td a').text().trim(),
-            link: $(e).find('td a').attr('href'),
+            title: $(e).find('td.al a').text().trim(),
+            link: $(e).find('td.al a').attr('href'),
             heatRate: $(e).find('td:nth-child(3)').text().trim(),
         }));
     const combinedTitles = items.map((item) => item.title).join('');
@@ -63,15 +61,13 @@ async function handler(ctx) {
 
     return {
         title,
-        description: $('.tt p').text().trim(),
-        image: $('.ii img').attr('src'),
         link,
         item: [
             {
                 title,
                 link,
                 description: renderRank,
-                guid: h64ToString(combinedTitles),
+                guid: combinedTitles,
             },
         ],
     };

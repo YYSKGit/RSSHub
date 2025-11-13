@@ -152,9 +152,7 @@ const middleware: MiddlewareHandler = async (ctx, next) => {
                     resolveRelativeLink($, elem, 'poster', baseUrl);
                 });
                 $('img, iframe').each((_, elem) => {
-                    if (!$(elem).attr('referrerpolicy')) {
-                        $(elem).attr('referrerpolicy', 'no-referrer');
-                    }
+                    $(elem).attr('referrerpolicy', 'no-referrer');
                 });
 
                 item.description = $('body').html() + '' + (config.suffix || '');

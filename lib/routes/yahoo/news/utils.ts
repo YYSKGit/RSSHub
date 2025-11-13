@@ -3,7 +3,6 @@ import { load } from 'cheerio';
 import { parseDate } from '@/utils/parse-date';
 import path from 'node:path';
 import { art } from '@/utils/render';
-import { config } from '@/config';
 
 const getArchive = async (region, limit, tag, providerId?) => {
     const { data: response } = await got(
@@ -80,11 +79,7 @@ const parseList = (region, response) =>
 
 const parseItem = (item, tryGet) =>
     tryGet(item.link, async () => {
-        const { data: response } = await got(item.link, {
-            headers: {
-                'User-Agent': config.trueUA,
-            },
-        });
+        const { data: response } = await got(item.link);
         const $ = load(response);
 
         const ldJson = JSON.parse(

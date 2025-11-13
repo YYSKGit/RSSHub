@@ -48,7 +48,9 @@ async function handler(ctx) {
         results = JSON.parse(match[1]).searchResults.results;
     }
     const list = results.map((item) => {
-        const data = { title: item.title, pubDate: item.publicationDate };
+        const data = {};
+        data.title = item.title;
+        data.pubDate = item.publicationDate;
         const url = item.url;
         if (url.startsWith('http')) {
             data.url = url;

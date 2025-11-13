@@ -76,14 +76,8 @@ async function handler(ctx) {
                     },
                 });
 
-                const abstracts = response.data?.[0]?.abstracts ?? [];
-                item.description =
-                    abstracts.length === 0
-                        ? ''
-                        : abstracts
-                              .map((abs) => abs?.html ?? '')
-                              .filter(Boolean)
-                              .join('<br/><br/>');
+                item.description = response.data[0].abstracts[0].html ?? '';
+
                 return item;
             })
         )

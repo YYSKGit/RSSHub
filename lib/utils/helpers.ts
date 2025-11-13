@@ -46,10 +46,7 @@ export function getSearchParamsString(searchParams: any) {
  * @param {string} timeStr - duration string like "01:01:01" / "01:01" / "59"
  * @returns {number}       - total seconds
  */
-export function parseDuration(timeStr: string | undefined | null): number | undefined {
-    if (!timeStr) {
-        return;
-    }
+export function parseDuration(timeStr: string) {
     const clean = timeStr.trim().replaceAll(/[^\d:]/g, '');
     return clean
         .split(':')

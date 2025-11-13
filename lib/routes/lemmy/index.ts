@@ -92,16 +92,11 @@ async function handler(ctx) {
         const post = e.post;
         const creator = e.creator;
         const counts = e.counts;
-        const item = {
-            title: post.name,
-            author: creator.name,
-            pubDate: parseDate(post.published),
-            link: post.ap_id,
-            description: '',
-            comments: 0,
-            upvotes: 0,
-            downvotes: 0,
-        };
+        const item = {};
+        item.title = post.name;
+        item.author = creator.name;
+        item.pubDate = parseDate(post.published);
+        item.link = post.ap_id;
         const url = post.url;
         const urlContent = url ? `<p><a href="${url}">${url}</a></p>` : '';
         const body = post.body ? md.render(post.body) : '';

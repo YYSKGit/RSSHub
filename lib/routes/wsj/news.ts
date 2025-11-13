@@ -67,7 +67,10 @@ async function handler(ctx) {
         })
         .map(([key]) => key);
     const list = filteredKeys.map((key) => {
-        const item = { title: data[key].data.data.headline, link: data[key].data.data.url, test: key };
+        const item = {};
+        item.title = data[key].data.data.headline;
+        item.link = data[key].data.data.url;
+        item.test = key;
         return item;
     });
     const items = await pMap(list, (item) => parseArticle(item), { concurrency: 10 });

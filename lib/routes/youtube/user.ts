@@ -57,12 +57,10 @@ async function handler(ctx) {
     const filterShortsStr = params.get('filterShorts');
     const filterShorts = filterShortsStr === null || filterShortsStr === '' || filterShortsStr === 'true';
 
-    const isJsonFeed = ctx.req.query('format') === 'json';
-
     const data = await callApi({
         googleApi: getDataByUsernameGoogle,
         youtubeiApi: getDataByUsernameYoutubei,
-        params: { username, embed, filterShorts, isJsonFeed },
+        params: { username, embed, filterShorts },
     });
 
     return data;

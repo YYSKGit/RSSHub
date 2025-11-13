@@ -44,43 +44,28 @@ async function handler(ctx) {
 
     const $ = load(response.data);
 
-    const categoriesConf = {
-        hot: {
-            articleSelector: '.carousel__list .carousel__item',
-            titleExtractor: (e) => e.attr('title').trim(),
-        },
-        editor: {
-            articleSelector: '.list-container--featured .list-vertical__item',
-            titleExtractor: (e) => e.find('.list-vertical__title').text().trim(),
-        },
-        default: {
-            articleSelector: '.list-container--index .list-vertical__item',
-            titleExtractor: (e) => e.find('.list-vertical__title').text().trim(),
-        },
-    };
-    const getItems = (config) =>
-        $(config.articleSelector)
-            .toArray()
-            .map((item) => {
-                const a = $(item);
-                const rawLink = a.attr('href').split('?')[0];
-                return {
-                    title: config.titleExtractor(a),
-                    link: rawLink.startsWith('http') ? rawLink : `${rootUrl}${rawLink}`,
-                };
-            });
+    let articleSelector;
+    let titleExtractor;
 
-    let items;
-    if (category) {
-        const conf = categoriesConf[category];
-        items = getItems(conf);
+    if (category === 'hot') {
+        articleSelector = '.carousel__list .carousel__item';
+        titleExtractor = (element) => element.attr('title').trim();
     } else {
-        const defaultItems = getItems(categoriesConf.default);
-        const hotItems = getItems(categoriesConf.hot);
-
-        const combinedItems = [...hotItems, ...defaultItems];
-        items = [...new Map(combinedItems.map((item) => [item.link, item])).values()];
+        const listContainer = category === 'editor' ? '.list-container--featured' : '.list-container--index';
+        articleSelector = `${listContainer} .list-vertical__item`;
+        titleExtractor = (element) => element.find('.list-vertical__title').text().trim();
     }
+
+    let items = $(articleSelector)
+        .toArray()
+        .map((item) => {
+            const a = $(item);
+            const rawLink = a.attr('href').split('?')[0];
+            return {
+                title: titleExtractor(a),
+                link: rawLink.startsWith('http') ? rawLink : `${rootUrl}${rawLink}`,
+            };
+        });
 
     items = await Promise.all(
         items.map((item) =>

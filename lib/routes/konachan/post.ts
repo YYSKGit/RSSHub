@@ -81,12 +81,13 @@ async function handler(ctx) {
             author: post.author,
             pubDate: new Date(post.created_at * 1e3).toUTCString(),
             description: (() => {
-                const result: string[] = [
+                const result: string[] = [];
+                result.push(
                     `<img src="${post.sample_url}" />`,
                     `<p>Rating: ${post.rating}</p><p>Score: ${post.score}</p>`,
                     ...(post.source ? [`<a href="${post.source}">Source</a>`] : []),
-                    ...(post.parent_id ? [`<a href="${baseUrl}/post/show/${post.parent_id}">Parent</a>`] : []),
-                ];
+                    ...(post.parent_id ? [`<a href="${baseUrl}/post/show/${post.parent_id}">Parent</a>`] : [])
+                );
                 return result.join('');
             })(),
             media: {

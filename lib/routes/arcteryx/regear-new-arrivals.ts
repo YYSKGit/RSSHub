@@ -48,16 +48,14 @@ async function handler() {
     items = items.filter((item) => item.availableSizes.length !== 0);
 
     const list = items.map((item) => {
-        const data = {
-            title: item.displayTitle,
-            link: item.pdpLink.url,
-            imgUrl: JSON.parse(item.imageUrls).front,
-            availableSizes: item.availableSizes,
-            color: item.color,
-            originalPrice: getUSDPrice(item.originalPrice),
-            regearPrice: item.priceRange[0] === item.priceRange[1] ? getUSDPrice(item.priceRange[0]) : `${getUSDPrice(item.priceRange[0])} - ${getUSDPrice(item.priceRange[1])}`,
-            description: '',
-        };
+        const data = {};
+        data.title = item.displayTitle;
+        data.link = item.pdpLink.url;
+        data.imgUrl = JSON.parse(item.imageUrls).front;
+        data.availableSizes = item.availableSizes;
+        data.color = item.color;
+        data.originalPrice = getUSDPrice(item.originalPrice);
+        data.regearPrice = item.priceRange[0] === item.priceRange[1] ? getUSDPrice(item.priceRange[0]) : `${getUSDPrice(item.priceRange[0])} - ${getUSDPrice(item.priceRange[1])}`;
         data.description = art(path.join(__dirname, 'templates/regear-product-description.art'), {
             data,
         });
