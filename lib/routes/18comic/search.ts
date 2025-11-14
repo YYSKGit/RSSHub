@@ -131,8 +131,8 @@ async function handler(ctx) {
     );
 
     return {
-        title: `Search Results For '${keyword}' - 禁漫天堂`,
-        link: currentUrl.replace(/\?$/, ''),
+        title: `Search Results For ${keyword === '' ? 'All' : `'${keyword}'`} - 禁漫天堂`,
+        link: keyword === '' ? `${rootUrl}/albums` : currentUrl.replace(/\?$/, ''),
         item: results,
     };
 }
