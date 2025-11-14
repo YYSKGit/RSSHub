@@ -1,8 +1,7 @@
 import { Route } from '@/types';
 import { apiMapCategory, defaultDomain, getApiUrl, getRootUrl, processApiItems } from './utils';
+import { getSliceCount } from './slice';
 import { parseDate } from '@/utils/parse-date';
-import { art } from '@/utils/render';
-import path from 'node:path';
 import cache from '@/utils/cache';
 
 export const route: Route = {
@@ -44,16 +43,20 @@ async function handler(ctx) {
     const option = ctx.req.param('option') ?? 'photos';
     const category = ctx.req.param('category') ?? 'all';
     const keyword = ctx.req.param('keyword') ?? '';
+    const keywordEncoded = encodeURIComponent(keyword);
     const time = ctx.req.param('time') ?? 'a';
     const { domain = defaultDomain } = ctx.req.query();
     const rootUrl = getRootUrl(domain);
     let order = ctx.req.param('order') ?? 'mr';
-    const currentUrl = `${rootUrl}/search/${option}${category === 'all' ? '' : `/${category}`}${keyword ? `?search_query=${keyword}` : '?'}${time === 'a' ? '' : `&t=${time}`}${order === 'mr' ? '' : `&o=${order}`}`;
+    const currentUrl = `${rootUrl}/search/${option}${category === 'all' ? '' : `/${category}`}${keywordEncoded ? `?search_query=${keywordEncoded}` : '?'}${time === 'a' ? '' : `&t=${time}`}${order === 'mr' ? '' : `&o=${order}`}`;
     const limit = ctx.req.query('limit') ? Number.parseInt(ctx.req.query('limit')) : 20;
+
+    const API_BASE = 'https://api.yyskweb.com/unscramble';
+    const accessKey = process.env.ACCESS_KEY ?? '';
 
     let apiUrl = getApiUrl();
     order = time === 'a' ? order : `${order}_${time}`;
-    apiUrl = `${apiUrl}/search?search_query=${keyword}&o=${order}`;
+    apiUrl = `${apiUrl}/search?search_query=${keywordEncoded}&o=${order}`;
     let apiResult = await processApiItems(apiUrl);
     let filteredItemsByCategory = apiResult.content;
     // Filter items by category if not 'all'
@@ -67,25 +70,36 @@ async function handler(ctx) {
                 const result = {};
                 result.title = item.name;
                 result.link = `${rootUrl}/album/${item.id}`;
-                result.guid = `18comic:/album/${item.id}`;
                 result.updated = parseDate(item.update_at);
                 apiUrl = `${getApiUrl()}/album?id=${item.id}`;
                 apiResult = await processApiItems(apiUrl);
                 result.pubDate = new Date(apiResult.addtime * 1000);
                 result.category = apiResult.tags.map((tag) => tag);
                 result.author = apiResult.author.map((a) => a).join(', ');
-                result.description = art(path.join(__dirname, 'templates/description.art'), {
-                    introduction: apiResult.description,
-                    images: [
-                        `https://cdn-msp3.${domain}/media/albums/${item.id}_3x4.jpg`,
-                        // 取得的预览图片会被分割排序，所以先只取封面图
-                        // `https://cdn-msp3.${domain}/media/photos/${item.id}/00001.webp`,
-                        // `https://cdn-msp3.${domain}/media/photos/${item.id}/00002.webp`,
-                        // `https://cdn-msp3.${domain}/media/photos/${item.id}/00003.webp`,
-                    ],
-                    cover: `https://cdn-msp3.${domain}/media/albums/${item.id}_3x4.jpg`,
-                    category: result.category,
+
+                const authorHtmls = apiResult.author.map((a) => {
+                    const authorUrl = `${rootUrl}/search/${option}/?search_query=${encodeURIComponent(a)}`;
+                    return `<strong><a href="${authorUrl}">@${a}</a></strong>`;
                 });
+                const categoryHtmls = result.category.map((tag) => {
+                    const tagUrl = `${rootUrl}/search/${option}/?search_query=${encodeURIComponent(tag)}`;
+                    return `<a href="${tagUrl}">#${tag}</a>`;
+                });
+                const tagHtmls = [...authorHtmls, ...categoryHtmls];
+                const imageHtmls = Array.from({ length: 50 }, (_, i) => {
+                    const number = (i + 1).toString().padStart(5, '0');
+                    const sliceCount = getSliceCount(item.id, number);
+                    const url = encodeURIComponent(`https://cdn-msp3.${domain}/media/photos/${item.id}/${number}.webp`);
+                    const slicedUrl = `${API_BASE}?name=18comic&id=${item.id}&url=${url}&strips=${sliceCount}&key=${accessKey}`;
+                    return slicedUrl;
+                }).map((url) => `<img src="${url}" style="max-width: 100%; height: auto;" />`);
+                result.description = `
+                    <p>${tagHtmls.join(', ')}</p>
+                    <hr style="border: none; height: 1px; background-color: #000000;">
+                    <p>${apiResult.description}</p>
+                    <div>${imageHtmls.join('')}</div>
+                `;
+
                 return result;
             })
         )
@@ -95,6 +109,5 @@ async function handler(ctx) {
         title: `Search Results For '${keyword}' - 禁漫天堂`,
         link: currentUrl.replace(/\?$/, ''),
         item: results,
-        allowEmpty: true,
     };
 }
