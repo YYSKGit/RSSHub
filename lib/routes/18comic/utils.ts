@@ -42,6 +42,25 @@ const apiMapCategory = (category) => {
     }
 };
 
+const apiMapIDCategory = (idCategory) => {
+    switch (idCategory) {
+        case '4':
+            return 'another';
+        case '1':
+            return 'doujin';
+        case '5':
+            return 'hanman';
+        case '6':
+            return 'meiman';
+        case '3':
+            return 'short';
+        case '2':
+            return 'single';
+        default:
+            return null;
+    }
+};
+
 const getApiUrl = () => `https://${apiDomain}`;
 
 // using api to fetch data
@@ -151,4 +170,4 @@ const ProcessItems = async (ctx, currentUrl, rootUrl) => {
     };
 };
 
-export { defaultDomain, getRootUrl, ProcessItems, getApiUrl, processApiItems, apiMapCategory };
+export { defaultDomain, getRootUrl, ProcessItems, getApiUrl, processApiItems, apiMapCategory, apiMapIDCategory };

@@ -1,5 +1,5 @@
 import { Route } from '@/types';
-import { apiMapCategory, defaultDomain, getApiUrl, getRootUrl, processApiItems } from './utils';
+import { apiMapCategory, apiMapIDCategory, defaultDomain, getApiUrl, getRootUrl, processApiItems } from './utils';
 import { getSliceCount } from './slice';
 import { parseDate } from '@/utils/parse-date';
 import cache from '@/utils/cache';
@@ -74,18 +74,43 @@ async function handler(ctx) {
                 apiUrl = `${getApiUrl()}/album?id=${item.id}`;
                 apiResult = await processApiItems(apiUrl);
                 result.pubDate = new Date(apiResult.addtime * 1000);
-                result.category = apiResult.tags.map((tag) => tag);
-                result.author = apiResult.author.map((a) => a).join(', ');
+                result.category = apiResult.tags.filter((tag) => tag.trim() !== '');
+                result.author = apiResult.author.filter((a) => a.trim() !== '').join(', ');
 
-                const authorHtmls = apiResult.author.map((a) => {
-                    const authorUrl = `${rootUrl}/search/${option}/?search_query=${encodeURIComponent(a)}`;
-                    return `<strong><a href="${authorUrl}">@${a}</a></strong>`;
-                });
+                const authorHtmls = apiResult.author
+                    .filter((a) => a.trim() !== '')
+                    .map((a) => {
+                        const authorUrl = `${rootUrl}/search/${option}?search_query=${encodeURIComponent(a)}`;
+                        return `<strong><a href="${authorUrl}">@${a}</a></strong>`;
+                    });
+                const typeHtml = () => {
+                    const type = item.category.title;
+                    const typeID = item.category.id;
+                    const typeMap = apiMapIDCategory(typeID);
+                    if (typeMap) {
+                        const typeUrl = `${rootUrl}/albums/${typeMap}`;
+                        return `<strong><a href="${typeUrl}">#${type}</a></strong>`;
+                    } else {
+                        return `<strong>#${type}</strong>`;
+                    }
+                };
                 const categoryHtmls = result.category.map((tag) => {
-                    const tagUrl = `${rootUrl}/search/${option}/?search_query=${encodeURIComponent(tag)}`;
+                    const tagUrl = `${rootUrl}/search/${option}?search_query=${encodeURIComponent(tag)}`;
                     return `<a href="${tagUrl}">#${tag}</a>`;
                 });
-                const tagHtmls = [...authorHtmls, ...categoryHtmls];
+                const actorHtmls = apiResult.actors
+                    .filter((actor) => actor.trim() !== '')
+                    .map((actor) => {
+                        const actorUrl = `${rootUrl}/search/${option}?search_query=${encodeURIComponent(actor)}`;
+                        return `<a href="${actorUrl}">#${actor}</a>`;
+                    });
+                const workHtmls = apiResult.works
+                    .filter((work) => work.trim() !== '')
+                    .map((work) => {
+                        const workUrl = `${rootUrl}/search/${option}?search_query=${encodeURIComponent(work)}`;
+                        return `<a href="${workUrl}">#${work}</a>`;
+                    });
+                const tagHtmls = [...authorHtmls, typeHtml(), ...actorHtmls, ...workHtmls, ...categoryHtmls];
                 const imageHtmls = Array.from({ length: 50 }, (_, i) => {
                     const number = (i + 1).toString().padStart(5, '0');
                     const sliceCount = getSliceCount(item.id, number);
