@@ -110,7 +110,7 @@ async function handler(ctx) {
                         const workUrl = `${rootUrl}/search/${option}?search_query=${encodeURIComponent(work)}`;
                         return `<a href="${workUrl}">#${work}</a>`;
                     });
-                const tagHtmls = [...authorHtmls, typeHtml(), ...actorHtmls, ...workHtmls, ...categoryHtmls];
+                const tagHtmls = [...authorHtmls, typeHtml(), ...workHtmls, ...actorHtmls, ...categoryHtmls];
                 const imageHtmls = Array.from({ length: 50 }, (_, i) => {
                     const number = (i + 1).toString().padStart(5, '0');
                     const sliceCount = getSliceCount(item.id, number);
