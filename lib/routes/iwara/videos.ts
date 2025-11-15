@@ -23,6 +23,7 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
     const baseUrl = 'https://www.iwara.tv';
     const imgUrl = 'https://i.iwara.tv';
     const apiUrl = `https://api.iwara.tv`;
+    const userAgent = 'YYSK-RSSHUB/1.0 (yysk.mygo@gmail.com)';
 
     let sort = 'date';
     let text = '最新';
@@ -34,6 +35,9 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
     const response = await got({
         method: 'get',
         url: `${apiUrl}/videos?rating=ecchi&sort=${sort}&limit=${limit}&page=0`,
+        headers: {
+            'User-Agent': userAgent,
+        },
     });
 
     const data = response.data;
@@ -44,6 +48,9 @@ async function handler(ctx: { req: { param: (arg0: string) => string } }) {
                     const video = await got({
                         method: 'get',
                         url: `${apiUrl}/video/${item.id}`,
+                        headers: {
+                            'User-Agent': userAgent,
+                        },
                     });
                     return getItemData(video.data, baseUrl, imgUrl);
                 } catch {
