@@ -111,6 +111,11 @@ async function handler(ctx) {
                         return `<a href="${workUrl}">#${work}</a>`;
                     });
                 const tagHtmls = [...authorHtmls, typeHtml(), ...workHtmls, ...actorHtmls, ...categoryHtmls];
+                const coverHtml = () => {
+                    const url = encodeURIComponent(`https://cdn-msp3.${domain}/media/albums/${item.id}_3x4.jpg`);
+                    const slicedUrl = `${API_BASE}?name=18comic&id=${item.id}&url=${url}&strips=1&key=${accessKey}`;
+                    return `<img src="${slicedUrl}" style="max-width: 100%; height: auto;" />`;
+                };
                 const imageHtmls = Array.from({ length: 50 }, (_, i) => {
                     const number = (i + 1).toString().padStart(5, '0');
                     const sliceCount = getSliceCount(item.id, number);
@@ -122,6 +127,7 @@ async function handler(ctx) {
                     <p>${tagHtmls.join(', ')}</p>
                     <hr style="border: none; height: 1px; background-color: #000000;">
                     <p>${apiResult.description}</p>
+                    <p>${coverHtml()}</p>
                     <div>${imageHtmls.join('')}</div>
                 `;
 
