@@ -57,41 +57,64 @@ export async function handler(ctx) {
         throw new InvalidParameterError('此分类不存在');
     }
 
-    const url: string = search ? `${baseUrl}/search?q=${encodeURIComponent(search)}&f=_all&s=create_time_DESC&syn=yes` : `${baseUrl}/albums${cid ? `-index-cate-${cid}` : ''}${tag ? `-index-tag-${tag}` : ''}.html`;
-    const { data } = await got(url, {
-        headers: {
-            'user-agent': userAgent,
-            referer: baseUrl,
-        },
-    });
-    const $ = load(data);
+    let urls: string[] = [];
+    if (search) {
+        const keywords = search.split(/[+\s,，]+/).filter(Boolean);
+        urls = keywords.map((k) => `${baseUrl}/search?q=${encodeURIComponent(k)}&f=_all&s=create_time_DESC&syn=yes`);
+    } else {
+        urls = [`${baseUrl}/albums${cid ? `-index-cate-${cid}` : ''}${tag ? `-index-tag-${tag}` : ''}.html`];
+    }
 
-    const list = $('.gallary_item')
-        .toArray()
-        .map((item) => {
-            item = $(item);
-            const href = item.find('a').attr('href');
-            const aid = href.match(/^\/photos-index-aid-(\d+)\.html$/)[1];
-            return {
-                title: item.find('a').attr('title'),
-                link: `${baseUrl}${href}`,
-                pubDate: parseDate(
-                    item
-                        .find('.info_col')
-                        .text()
-                        .match(/\d{4}-\d{2}-\d{2}/)?.[0],
-                    'YYYY-MM-DD'
-                ),
-                aid,
-            };
-        });
+    const responses = await Promise.all(
+        urls.map((url) =>
+            got(url, {
+                headers: {
+                    'user-agent': userAgent,
+                    referer: baseUrl,
+                },
+            })
+        )
+    );
+
+    let combinedItems = [];
+    for (const response of responses) {
+        const $ = load(response.data);
+        const items = $('.gallary_item')
+            .toArray()
+            .map((item) => {
+                item = $(item);
+                const href = item.find('a').attr('href');
+                const aid = href.match(/^\/photos-index-aid-(\d+)\.html$/)[1];
+                return {
+                    title: item.find('a').attr('title'),
+                    link: `${baseUrl}${href}`,
+                    pubDate: parseDate(
+                        item
+                            .find('.info_col')
+                            .text()
+                            .match(/\d{4}-\d{2}-\d{2}/)?.[0],
+                        'YYYY-MM-DD'
+                    ),
+                    aid,
+                };
+            });
+        combinedItems = combinedItems.concat(items);
+    }
+
+    const uniqueItemsMap = new Map();
+    for (const item of combinedItems) {
+        if (!uniqueItemsMap.has(item.aid)) {
+            uniqueItemsMap.set(item.aid, item);
+        }
+    }
+    const list = [...uniqueItemsMap.values()];
 
     const items = await Promise.all(
         list.map((item) =>
             cache.tryGet(item.link, async () => {
                 const { data: descRes } = await got(item.link, {
                     headers: {
-                        referer: encodeURI(url),
+                        referer: baseUrl,
                     },
                 });
                 let $ = load(descRes);
@@ -165,9 +188,10 @@ export async function handler(ctx) {
         )
     );
 
+    const $ = load(responses[0].data);
     return {
         title: $('head title').text(),
-        link: url,
+        link: urls[0],
         item: items,
     };
 }
