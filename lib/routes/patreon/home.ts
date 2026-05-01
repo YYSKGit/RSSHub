@@ -159,9 +159,6 @@ async function handler() {
         if (headerImages.length > 0) {
             attributes.post_metadata.image_order = [];
         }
-        if (relationships.attachments_media) {
-            delete relationships.attachments_media;
-        }
 
         return {
             title: `${imgPrefix}${rawTitle}`,
@@ -174,7 +171,6 @@ async function handler() {
             link: attributes.url,
             author: creatorName,
             pubDate: parseDate(attributes.published_at),
-            image: attributes.thumbnail?.url ?? attributes.image?.url,
             category: relationships.user_defined_tags?.map((tag) => tag.attributes.value),
         };
     });
