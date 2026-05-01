@@ -1,12 +1,12 @@
+import { config } from '@/config';
+import ConfigNotFoundError from '@/errors/types/config-not-found';
 import { Route } from '@/types';
 import cache from '@/utils/cache';
-import { buildHeaderImageUrl } from '@/utils/yysk/tools';
-import { getToken } from './token';
-import getIllustFollows from './api/get-illust-follows';
-import { config } from '@/config';
-import pixivUtils from './utils';
 import { parseDate } from '@/utils/parse-date';
-import ConfigNotFoundError from '@/errors/types/config-not-found';
+import { buildHeaderImageUrl } from '@/utils/yysk/tools';
+import getIllustFollows from './api/get-illust-follows';
+import { getToken } from './token';
+import pixivUtils from './utils';
 
 export const route: Route = {
     path: '/user/illustfollows',
@@ -85,7 +85,7 @@ async function handler() {
             const showTags = [userLink, ...(illust.illust_ai_type === 2 ? [aiTypeText] : []), ...tagLinks];
 
             return {
-                title: `${illust.page_count}P | ${illust.title}`,
+                title: `${illust.page_count}P | ${illust.user.name} | ${illust.title}`,
                 author: illust.user.name,
                 pubDate: parseDate(illust.create_date),
                 description: `
