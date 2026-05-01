@@ -35,7 +35,9 @@ export const route: Route = {
 };
 
 function parsePatreonJsonContent(jsonString: string): string {
-    if (!jsonString) {return '';}
+    if (!jsonString) {
+        return '';
+    }
     try {
         const data = JSON.parse(jsonString);
         function renderNode(node: any): string {
@@ -43,10 +45,18 @@ function parsePatreonJsonContent(jsonString: string): string {
                 let text = node.text;
                 if (node.marks) {
                     for (const mark of node.marks) {
-                        if (mark.type === 'bold') {text = `<strong>${text}</strong>`;}
-                        if (mark.type === 'italic') {text = `<em>${text}</em>`;}
-                        if (mark.type === 'underline') {text = `<u>${text}</u>`;}
-                        if (mark.type === 'link') {text = `<a href="${mark.attrs?.href}" target="_blank">${text}</a>`;}
+                        if (mark.type === 'bold') {
+                            text = `<strong>${text}</strong>`;
+                        }
+                        if (mark.type === 'italic') {
+                            text = `<em>${text}</em>`;
+                        }
+                        if (mark.type === 'underline') {
+                            text = `<u>${text}</u>`;
+                        }
+                        if (mark.type === 'link') {
+                            text = `<a href="${mark.attrs?.href}" target="_blank">${text}</a>`;
+                        }
                     }
                 }
                 return text;
@@ -132,7 +142,10 @@ async function handler() {
             targetColumn: 2,
             waterfallTargetCount: 50,
         };
-        const headerImages = images.length > 0 ? buildHeaderImageUrl('patreon', postId, images, buildOptions) : [];
+        let headerImages = images.length > 0 ? buildHeaderImageUrl('patreon', postId, images, buildOptions) : [];
+        if (images.length === 1 && headerImages.length > 1) {
+            headerImages = [headerImages[0]];
+        }
         const creatorName = relationships.campaign?.attributes?.name || 'Unknown Creator';
         const imgPrefix = relationships.images?.length ? `${relationships.images.length}P | ` : '';
         const rawTitle = attributes.title || 'Untitled Post';
@@ -145,6 +158,9 @@ async function handler() {
         }
         if (headerImages.length > 0) {
             attributes.post_metadata.image_order = [];
+        }
+        if (relationships.attachments_media) {
+            delete relationships.attachments_media;
         }
 
         return {
