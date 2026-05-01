@@ -147,7 +147,6 @@ async function handler() {
             headerImages = [headerImages[0]];
         }
         const creatorName = relationships.campaign?.attributes?.name || 'Unknown Creator';
-        const imgPrefix = relationships.images?.length ? `${relationships.images.length}P | ` : '';
         const rawTitle = attributes.title || 'Untitled Post';
 
         if (!attributes.content && attributes.content_json_string) {
@@ -161,7 +160,7 @@ async function handler() {
         }
 
         return {
-            title: `${imgPrefix}${rawTitle}`,
+            title: `${creatorName} | ${rawTitle}`,
             description: art(path.join(__dirname, 'templates/description.art'), {
                 attributes,
                 relationships,
