@@ -31,11 +31,17 @@ const host = 'https://civitai.red';
 const apiBase = 'https://api.yyskweb.com';
 const accessKey = process.env.ACCESS_KEY ?? '';
 
+const baseModelMap: Record<string, string> = {
+    'Wan Video 2.2 I2V-A14B': 'Wan2.2 I2V',
+    'Wan Video 2.2 T2V-A14B': 'Wan2.2 T2V',
+};
+
 async function handler(ctx) {
     const query = ctx.req.query();
     const searchParams = new URLSearchParams({
-        limit: '20',
+        nsfw: 'true',
         sort: 'Newest',
+        limit: '50',
     });
     for (const [key, value] of Object.entries(query)) {
         if (value && key !== 'key') {
@@ -52,19 +58,26 @@ async function handler(ctx) {
 
     const items = data.map((item: any) => {
         const latestVersion = item.modelVersions?.[0];
+        const modelId = latestVersion?.id || '';
         const author = item.creator?.username || 'Unknown';
         const type = item.type || 'Model';
         const baseModel = latestVersion?.baseModel || '';
+        const displayBaseModel = baseModelMap[baseModel] || baseModel;
         const tags = item.tags || [];
 
-        const showCategory = [`<strong><a href="${host}/user/${author}">@${author}</a></strong>`, `<strong>#${type}</strong>`, baseModel ? `<strong>#${baseModel}</strong>` : '', ...tags.map((t: any) => `#${t}`)].filter(Boolean);
+        const authorShow = `<strong><a href="${host}/user/${author}">@${author}</a></strong>`;
+        const typeShow = `<strong>#${type}</strong>`;
+        const baseModelShow = displayBaseModel ? `<strong>#${displayBaseModel}</strong>` : '';
+        const tagsShow = tags.map((t: string) => `<a href="${host}/models?tag=${t}">#${t}</a>`);
+        const showCategory = [authorShow, typeShow, baseModelShow, ...tagsShow].filter(Boolean);
 
         let mediaHtml = '';
         const mediaItems = latestVersion?.images?.slice(0, 5) || [];
         if (mediaItems.length > 0) {
-            const imgTags = mediaItems.map((media: any) => {
+            const imgTags = mediaItems.map((media: any, index: number) => {
                 const encodedUrl = encodeURIComponent(media.url);
-                const webpUrl = `${apiBase}/mediawebp?name=civitai&id=${item.id}&url=${encodedUrl}&key=${accessKey}`;
+                let webpUrl = `${apiBase}/mediawebp?name=civitai&id=${item.id}&url=${encodedUrl}`;
+                webpUrl += `&size=${index === 0 ? '400' : '800'}&key=${accessKey}`;
                 return `<p><img src="${webpUrl}" style="max-width: 100%; height: auto;"></p>`;
             });
             mediaHtml = imgTags.join('');
@@ -78,11 +91,11 @@ async function handler(ctx) {
         `;
 
         return {
-            title: item.name,
-            link: `${host}/models/${item.id}`,
+            title: `${displayBaseModel} | ${item.name}`,
+            link: `${host}/models/${item.id}${modelId ? `?modelVersionId=${modelId}` : ''}`,
             description: descriptionHtml,
             author,
-            category: [type, baseModel, ...tags].filter(Boolean),
+            category: [type, displayBaseModel, ...tags].filter(Boolean),
             pubDate: latestVersion?.publishedAt ? parseDate(latestVersion.publishedAt) : null,
         };
     });
