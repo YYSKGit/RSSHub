@@ -1,6 +1,7 @@
 import { Route } from '@/types';
 import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
+import { buildMediaWebpUrls } from '@/utils/yysk/tools';
 
 export const route: Route = {
     path: '/models',
@@ -28,8 +29,6 @@ export const route: Route = {
 };
 
 const host = 'https://civitai.red';
-const apiBase = 'https://api.yyskweb.com';
-const accessKey = process.env.ACCESS_KEY ?? '';
 
 const baseModelMap: Record<string, string> = {
     'Wan Video 2.2 I2V-A14B': 'Wan2.2 I2V',
@@ -41,7 +40,7 @@ async function handler(ctx) {
     const searchParams = new URLSearchParams({
         nsfw: 'true',
         sort: 'Newest',
-        limit: '50',
+        limit: '20',
     });
     for (const [key, value] of Object.entries(query)) {
         if (value && key !== 'key') {
@@ -74,12 +73,9 @@ async function handler(ctx) {
         let mediaHtml = '';
         const mediaItems = latestVersion?.images?.slice(0, 5) || [];
         if (mediaItems.length > 0) {
-            const imgTags = mediaItems.map((media: any, index: number) => {
-                const encodedUrl = encodeURIComponent(media.url);
-                let webpUrl = `${apiBase}/mediawebp?name=civitai&id=${item.id}&url=${encodedUrl}`;
-                webpUrl += `&size=${index === 0 ? '400' : '800'}&key=${accessKey}`;
-                return `<p><img src="${webpUrl}" style="max-width: 100%; height: auto;"></p>`;
-            });
+            const mediaUrls = mediaItems.map((media: any) => media.url);
+            const webpUrls = buildMediaWebpUrls('civitai', item.id, mediaUrls);
+            const imgTags = webpUrls.map((url) => `<p><img src="${url}" style="max-width: 100%; height: auto;"></p>`);
             mediaHtml = imgTags.join('');
         }
 

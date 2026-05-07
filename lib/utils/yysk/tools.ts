@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import axiosRetry from 'axios-retry';
+import crypto from 'node:crypto';
 
 let kvClient: AxiosInstance;
 
@@ -85,7 +86,7 @@ async function batchPrewarmRequests(items: { key: string; url: string }[]) {
         return;
     }
 
-    const prewarmPromises = requestsToMake.map((item) => apiClient.get(item.url).catch(() => {}));
+    const prewarmPromises = requestsToMake.map((item) => apiClient.get(item.url));
     await Promise.allSettled(prewarmPromises);
 }
 
@@ -118,6 +119,58 @@ function getRepresentativeImages(imageUrls: string[], targetCount: number = 10):
     }
 
     return [...new Set(result)];
+}
+
+/**
+ * 压缩 URL 列表，提取公共前后缀
+ * @param {string[]} urls - 原始 URL 数组
+ * @returns {{prefix: string, files: string, suffix: string}} 压缩后的 URL 组件
+ */
+function compressUrlList(urls: string[]): { prefix: string; files: string; suffix: string } {
+    if (!urls || urls.length === 0) {
+        return { prefix: '', files: '', suffix: '' };
+    }
+    if (urls.length === 1) {
+        return { prefix: urls[0], files: '', suffix: '' };
+    }
+
+    // 1. 查找公共前缀
+    let prefix = '';
+    const firstUrl = urls[0];
+    for (const [i, char] of [...firstUrl].entries()) {
+        if (urls.every((url) => url.length > i && url[i] === char)) {
+            prefix += char;
+        } else {
+            break;
+        }
+    }
+
+    // 如果所有 URL 完全相同，直接返回
+    if (prefix.length === firstUrl.length && urls.every((url) => url === firstUrl)) {
+        return { prefix, files: '', suffix: '' };
+    }
+
+    // 2. 基于移除前缀后的剩余部分来计算后缀
+    const remainders = urls.map((url) => url.slice(prefix.length));
+    const firstRemainder = remainders[0];
+    const minRemainderLength = Math.min(...remainders.map((r) => r.length));
+
+    // 从后往前遍历查找公共后缀
+    let suffix = '';
+    for (let i = 1; i <= minRemainderLength; i++) {
+        const char = firstRemainder[firstRemainder.length - i];
+        if (remainders.every((r) => r[r.length - i] === char)) {
+            suffix = char + suffix;
+        } else {
+            break;
+        }
+    }
+
+    // 3. 提取中间文件部分
+    const files = remainders.map((r) => r.slice(0, Math.max(0, r.length - suffix.length)));
+    const encodedFiles = files.map((f) => encodeURIComponent(f));
+
+    return { prefix, files: encodedFiles.join('|'), suffix };
 }
 
 /**
@@ -208,53 +261,38 @@ export function buildHeaderImageUrl(name: string, id: string, imageUrls: string[
 }
 
 /**
- * 压缩 URL 列表，提取公共前后缀
- * @param {string[]} urls - 原始 URL 数组
- * @returns {{prefix: string, files: string, suffix: string}} 压缩后的 URL 组件
+ * 构建 mediawebp 图像的 URL 数组，并触发批量预热
+ * @param {string} name - 图像名称
+ * @param {string} id - 图像ID
+ * @param {string[]} imageUrls - 原始图片 URL 数组
+ * @returns {string[]} 返回构建好的 webpUrl 数组
  */
-function compressUrlList(urls: string[]): { prefix: string; files: string; suffix: string } {
-    if (!urls || urls.length === 0) {
-        return { prefix: '', files: '', suffix: '' };
-    }
-    if (urls.length === 1) {
-        return { prefix: urls[0], files: '', suffix: '' };
-    }
+export function buildMediaWebpUrls(name: string, id: string, imageUrls: string[]): string[] {
+    const API_BASE = 'https://api.yyskweb.com';
+    const accessKey = process.env.ACCESS_KEY ?? '';
+    const prewarmItems: { key: string; url: string }[] = [];
 
-    // 1. 查找公共前缀
-    let prefix = '';
-    const firstUrl = urls[0];
-    for (const [i, char] of [...firstUrl].entries()) {
-        if (urls.every((url) => url.length > i && url[i] === char)) {
-            prefix += char;
-        } else {
-            break;
-        }
-    }
+    const resultUrls = imageUrls.map((url, index) => {
+        const hashParams = new URLSearchParams({
+            key: accessKey,
+            size: index === 0 ? '400' : '600',
+            url,
+        });
+        hashParams.sort();
+        const searchString = `?${hashParams.toString()}`;
+        const hashHex = crypto.createHash('sha256').update(searchString).digest('hex').slice(0, 8);
+        const prewarmKey = `cache/mediawebp/${name}/${id}/${hashHex}`;
 
-    // 如果所有 URL 完全相同，直接返回
-    if (prefix.length === firstUrl.length && urls.every((url) => url === firstUrl)) {
-        return { prefix, files: '', suffix: '' };
-    }
+        const requestParams = new URLSearchParams(hashParams);
+        requestParams.set('name', name);
+        requestParams.set('id', id);
+        const finalUrl = `${API_BASE}/mediawebp?${requestParams.toString()}`;
 
-    // 2. 基于移除前缀后的剩余部分来计算后缀
-    const remainders = urls.map((url) => url.slice(prefix.length));
-    const firstRemainder = remainders[0];
-    const minRemainderLength = Math.min(...remainders.map((r) => r.length));
+        prewarmItems.push({ key: prewarmKey, url: finalUrl });
+        return finalUrl;
+    });
 
-    // 从后往前遍历查找公共后缀
-    let suffix = '';
-    for (let i = 1; i <= minRemainderLength; i++) {
-        const char = firstRemainder[firstRemainder.length - i];
-        if (remainders.every((r) => r[r.length - i] === char)) {
-            suffix = char + suffix;
-        } else {
-            break;
-        }
-    }
+    batchPrewarmRequests(prewarmItems);
 
-    // 3. 提取中间文件部分
-    const files = remainders.map((r) => r.slice(0, Math.max(0, r.length - suffix.length)));
-    const encodedFiles = files.map((f) => encodeURIComponent(f));
-
-    return { prefix, files: encodedFiles.join('|'), suffix };
+    return resultUrls;
 }
