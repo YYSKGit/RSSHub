@@ -36,15 +36,18 @@ const baseModelMap: Record<string, string> = {
 };
 
 async function handler(ctx) {
-    const query = ctx.req.query();
+    const queries = ctx.req.queries();
     const searchParams = new URLSearchParams({
         nsfw: 'true',
         sort: 'Newest',
         limit: '20',
     });
-    for (const [key, value] of Object.entries(query)) {
-        if (value && key !== 'key') {
-            searchParams.set(key, String(value));
+    for (const [key, values] of Object.entries(queries)) {
+        if (values && key !== 'key') {
+            searchParams.delete(key);
+            for (const value of values as string[]) {
+                searchParams.append(key, String(value));
+            }
         }
     }
 
