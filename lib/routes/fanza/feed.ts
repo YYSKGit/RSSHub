@@ -149,11 +149,12 @@ async function handler(ctx) {
             const makerUrl = `${baseUrl}/${floor}/list/?maker=${detailData.maker.id}`;
             return `<strong><a href="${makerUrl}">@${makerName}</a></strong>`;
         };
-        const numberHtml = () => {
-            const numberUrlA = `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${detailData.makerContentId}`;
-            const numberUrlB = `https://www.jav321.com/video/${detailData.id}`;
-            return [`<strong><a href="${numberUrlA}">@JAVLibrary</a></strong>`, `<strong><a href="${numberUrlB}">@JAV321</a></strong>`];
-        };
+        const numberHtml = () =>
+            [
+                { name: '@JAVLibrary', url: `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${detailData.makerContentId}` },
+                { name: '@JAV321', url: `https://www.jav321.com/video/${detailData.id}` },
+                { name: '@Sukebei', url: `https://sukebei.nyaa.si?q=${detailData.makerContentId}` },
+            ].map((site) => `<strong><a href="${site.url}">${site.name}</a></strong>`);
         const tagHtmls = [makerHtml(), floorHtml(), ...genreHtmls, ...relatedWordHtmls, ...numberHtml()];
         return {
             title: `【${detailData.makerContentId}】${detailData.title}`,
