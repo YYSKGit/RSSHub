@@ -274,7 +274,6 @@ export function buildMediaWebpUrls(name: string, id: string, imageUrls: string[]
 
     const resultUrls = imageUrls.map((url, index) => {
         const hashParams = new URLSearchParams({
-            key: accessKey,
             size: index === 0 ? '400' : '600',
             url,
         });
@@ -286,6 +285,7 @@ export function buildMediaWebpUrls(name: string, id: string, imageUrls: string[]
         const requestParams = new URLSearchParams(hashParams);
         requestParams.set('name', name);
         requestParams.set('id', id);
+        requestParams.set('key', accessKey);
         const finalUrl = `${API_BASE}/mediawebp?${requestParams.toString()}`;
 
         prewarmItems.push({ key: prewarmKey, url: finalUrl });
