@@ -89,6 +89,9 @@ async function handler(ctx) {
                 number
                 largeImageUrl
             }
+            sample2DMovie {
+                highestMovieUrl
+            }
         }
         query MultipleContentPages(${queryDefinitions}) {
             ${queryBody}
@@ -108,13 +111,24 @@ async function handler(ctx) {
     const items = contentIds.map((_content, index) => {
         const detailData = detailsData[`work${index}`];
         const imageUrls = detailData.sampleImages.map((img) => img.largeImageUrl);
+        let posterUrl = '';
         if (detailData.packageImage.largeUrl) {
-            imageUrls.unshift(detailData.packageImage.largeUrl);
-        }
-        if (detailData.packageImage.mediumUrl) {
-            imageUrls.unshift(detailData.packageImage.mediumUrl);
+            posterUrl = detailData.packageImage.largeUrl;
+            imageUrls.unshift(posterUrl);
+        } else if (detailData.packageImage.mediumUrl) {
+            posterUrl = detailData.packageImage.mediumUrl;
+            imageUrls.unshift(posterUrl);
         }
         const imageHtmls = imageUrls.map((img) => `<p><img src="${img}" style="max-width: 100%; height: auto;"></p>`);
+        const videoUrl = detailData.sample2DMovie?.highestMovieUrl;
+        let videoHtml = '';
+        if (videoUrl) {
+            const videoAttributes = ['controls', 'playsinline', 'preload="metadata"', 'style="max-width: 100%; height: auto;"'];
+            if (posterUrl) {
+                videoAttributes.push(`poster="${posterUrl}"`);
+            }
+            videoHtml = `<p><video ${videoAttributes.join(' ')}><source src="${videoUrl}" type="video/mp4"></video></p>`;
+        }
         const floor = detailData.floor.toLowerCase();
         const floorHtml = () => {
             let floorName = floor;
@@ -165,6 +179,7 @@ async function handler(ctx) {
                 <hr style="border: none; height: 1px; background-color: #000000;">
                 <div>${imageHtmls.join('')}</div>
                 <p>${detailData.description}</p>
+                ${videoHtml}
             `,
             link: `${baseUrl}/${floor}/content/?id=${detailData.id}`,
             category: detailData.genres.map((g) => g.name),
