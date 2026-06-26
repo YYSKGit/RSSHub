@@ -123,11 +123,11 @@ async function handler(ctx) {
         const videoUrl = detailData.sample2DMovie?.highestMovieUrl;
         let videoHtml = '';
         if (videoUrl) {
-            const videoAttributes = ['controls', 'playsinline', 'preload="metadata"', 'style="max-width: 100%; height: auto;"'];
+            const videoAttributes = [`src="${videoUrl}"`, 'preload="metadata"', 'controls="controls"', 'style="max-width: 100%; height: auto;"'];
             if (posterUrl) {
-                videoAttributes.push(`poster="${posterUrl}"`);
+                videoAttributes.splice(1, 0, `poster="${posterUrl}"`);
             }
-            videoHtml = `<p><video ${videoAttributes.join(' ')}><source src="${videoUrl}" type="video/mp4"></video></p>`;
+            videoHtml = `<p><video ${videoAttributes.join(' ')}></video></p>`;
         }
         const floor = detailData.floor.toLowerCase();
         const floorHtml = () => {
