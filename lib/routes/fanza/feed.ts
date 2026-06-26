@@ -125,7 +125,9 @@ async function handler(ctx) {
         if (videoUrl) {
             const videoAttributes = [`src="${videoUrl}"`, 'preload="metadata"', 'controls="controls"', 'style="max-width: 100%; height: auto;"'];
             if (posterUrl) {
-                videoAttributes.splice(1, 0, `poster="${posterUrl}"`);
+                const b64Url = Buffer.from(posterUrl).toString('base64').replaceAll('+', '-').replaceAll('/', '_');
+                const smartPosterUrl = `https://res.cloudinary.com/yysk/image/fetch/c_fill,h_450,w_800/e_blur:1500/l_fetch:${b64Url}` + `/c_fit,h_450/fl_layer_apply,fl_no_overflow,g_center/${posterUrl}`;
+                videoAttributes.splice(1, 0, `poster="${smartPosterUrl}"`);
             }
             videoHtml = `<p><video ${videoAttributes.join(' ')}></video></p>`;
         }
