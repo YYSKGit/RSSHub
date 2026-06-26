@@ -10,7 +10,7 @@ export const route: Route = {
 
 async function handler(ctx) {
     const queryWord = ctx.req.param('queryWord');
-    const limit = ctx.req.param('limit') ? Number.parseInt(ctx.req.param('limit')) : 100;
+    const limit = ctx.req.param('limit') ? Number.parseInt(ctx.req.param('limit')) : 50;
 
     const apiUrl = 'https://api.video.dmm.co.jp/graphql';
     const baseUrl = 'https://video.dmm.co.jp';
@@ -178,8 +178,8 @@ async function handler(ctx) {
                 <p>${tagHtmls.join(', ')}</p>
                 <hr style="border: none; height: 1px; background-color: #000000;">
                 <div>${imageHtmls.join('')}</div>
-                <p>${detailData.description}</p>
                 ${videoHtml}
+                <p>${detailData.description}</p>
             `,
             link: `${baseUrl}/${floor}/content/?id=${detailData.id}`,
             category: detailData.genres.map((g) => g.name),
